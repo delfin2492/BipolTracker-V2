@@ -27,33 +27,25 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
 class Home : Fragment(), OnMapReadyCallback {
 
-    private var param1: String? = null
-    private var param2: String? = null
     private lateinit var googleMap: GoogleMap
     private lateinit var mapView: MapView
     private lateinit var floatingLogo: ImageView
     private lateinit var fabCenter: FloatingActionButton
     
+    // Titik Tengah & Batas Area (Lock Area)
     private val desiredLocation = LatLng(-6.360491, 106.827123)
+    private val areaBounds = LatLngBounds(
+        LatLng(-6.375, 106.815), // Sudut Barat Daya (Southwest)
+        LatLng(-6.345, 106.840)  // Sudut Timur Laut (Northeast)
+    )
+
     private val checkInterval: Long = 5000
     private val handler = Handler()
     private lateinit var apiService: ApiService
-
     private val busMarkers = HashMap<String, Marker>()
     private var isFirstLoad = true
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -68,7 +60,7 @@ class Home : Fragment(), OnMapReadyCallback {
         mapView.getMapAsync(this)
 
         fabCenter.setOnClickListener {
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 15.25f))
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 15.5f))
         }
 
         return rootView
@@ -77,20 +69,37 @@ class Home : Fragment(), OnMapReadyCallback {
     override fun onMapReady(map: GoogleMap?) {
         this.googleMap = map ?: return
 
-        // Apply Custom Map Style
+        // --- LOCK MAPS SETTINGS ---
+        googleMap.setLatLngBoundsForCameraTarget(areaBounds) // Kunci agar tidak bisa geser jauh
+        googleMap.setMinZoomPreference(14.0f) // Kunci Zoom Out (agar tidak terlalu jauh)
+        googleMap.setMaxZoomPreference(18.0f) // Kunci Zoom In
+        // --------------------------
+
         try {
-            val success = googleMap.setMapStyle(
-                MapStyleOptions.loadRawResourceStyle(requireContext(), R.raw.map_style)
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+            googleMap.setMapStyle(MapStyleOptions.loadRawResourceStyle(requireContext(), R.raw.map_style))
+        } catch (e: Exception) { e.printStackTrace() }
 
         val bitmap = BitmapFactory.decodeResource(resources, R.drawable.bipol)
         val markerIcon = BitmapDescriptorFactory.fromBitmap(bitmap)
 
-        // Rute Pagi & Sore (Constants)
-        val ruteBipolPagi = listOf(
+        setupRoutes()
+        addStaticMarkers()
+
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 15.5f))
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://72.61.141.118:3000/")
+            .addConverterFactory(GsonConverterFactory.create())
+            .client(createOkHttpClient())
+            .build()
+
+        apiService = retrofit.create(ApiService::class.java)
+        startTracking(markerIcon)
+    }
+
+    private fun setupRoutes() {
+        // Data Rute Pagi & Sore (Dipisahkan agar kode lebih bersih)
+        val rutePagi = listOf(
             LatLng(-6.371652849002165, 106.82442672767823), LatLng(-6.371666869491176, 106.82406284331717),
             LatLng(-6.371629588149347, 106.82400869439084), LatLng(-6.3713856816309535, 106.82397919037493),
             LatLng(-6.371125781310585, 106.82396309736485), LatLng(-6.370600649527726, 106.82394968631164),
@@ -137,7 +146,7 @@ class Home : Fragment(), OnMapReadyCallback {
             LatLng(-6.371102493717312, 106.82441761492113), LatLng(-6.371366379045477, 106.82441002835097),
             LatLng(-6.371654768165203, 106.82443089088757)
         )
-        val ruteBipolSore = listOf(
+        val ruteSore = listOf(
             LatLng(-6.351814, 106.831697), LatLng(-6.352137, 106.831863), LatLng(-6.352489, 106.831920),
             LatLng(-6.352952, 106.831879), LatLng(-6.354154, 106.831673), LatLng(-6.355982, 106.830275),
             LatLng(-6.356449, 106.830157), LatLng(-6.356934, 106.830284), LatLng(-6.358163, 106.831209),
@@ -168,23 +177,8 @@ class Home : Fragment(), OnMapReadyCallback {
             LatLng(-6.351833, 106.831649), LatLng(-6.351814, 106.831697)
         )
 
-        googleMap.addPolyline(PolylineOptions().width(8f).color(Color.parseColor("#BF1E2E")).addAll(ruteBipolPagi))
-        googleMap.addPolyline(PolylineOptions().width(8f).color(Color.parseColor("#159BB3")).addAll(ruteBipolSore))
-
-        // Static Markers with custom icons/colors if needed
-        addStaticMarkers()
-
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 15.25f))
-
-        val retrofit = Retrofit.Builder()
-            .baseUrl("http://72.61.141.118:3000/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .client(createOkHttpClient())
-            .build()
-
-        apiService = retrofit.create(ApiService::class.java)
-
-        startTracking(markerIcon)
+        googleMap.addPolyline(PolylineOptions().width(8f).color(Color.parseColor("#BF1E2E")).addAll(rutePagi))
+        googleMap.addPolyline(PolylineOptions().width(8f).color(Color.parseColor("#159BB3")).addAll(ruteSore))
     }
 
     private fun addStaticMarkers() {
@@ -205,9 +199,7 @@ class Home : Fragment(), OnMapReadyCallback {
                 apiService.getData().enqueue(object : Callback<DataResponse> {
                     override fun onResponse(call: Call<DataResponse>, response: Response<DataResponse>) {
                         if (response.isSuccessful) {
-                            response.body()?.data?.let { busList ->
-                                updateBusMarkers(busList, markerIcon)
-                            }
+                            response.body()?.data?.let { busList -> updateBusMarkers(busList, markerIcon) }
                         }
                     }
                     override fun onFailure(call: Call<DataResponse>, t: Throwable) { t.printStackTrace() }
@@ -220,8 +212,6 @@ class Home : Fragment(), OnMapReadyCallback {
 
     private fun updateBusMarkers(busList: List<BusData>, markerIcon: BitmapDescriptor) {
         val currentIds = busList.map { it.bus_id }.toSet()
-        
-        // Remove markers for buses no longer in the list
         val iterator = busMarkers.entries.iterator()
         while (iterator.hasNext()) {
             val entry = iterator.next()
@@ -231,7 +221,6 @@ class Home : Fragment(), OnMapReadyCallback {
             }
         }
 
-        // Add or update markers
         for (busData in busList) {
             val busLocation = LatLng(busData.latitude, busData.longitude)
             if (busMarkers.containsKey(busData.bus_id)) {
@@ -240,14 +229,13 @@ class Home : Fragment(), OnMapReadyCallback {
                 val marker = googleMap.addMarker(MarkerOptions()
                     .position(busLocation)
                     .title("Bipol ${busData.bus_id}")
-                    .snippet("Last updated: ${busData.timestamp}")
                     .icon(markerIcon))
                 busMarkers[busData.bus_id] = marker
             }
         }
 
         if (isFirstLoad && busList.isNotEmpty()) {
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 15.25f))
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 15.5f))
             isFirstLoad = false
         }
     }
@@ -282,10 +270,19 @@ class Home : Fragment(), OnMapReadyCallback {
     override fun onSaveInstanceState(outState: Bundle) { super.onSaveInstanceState(outState); mapView.onSaveInstanceState(outState) }
 }
 
+data class BusData(
+    val bus_id: String,
+    val latitude: Double,
+    val longitude: Double
+)
+
+data class DataResponse(
+    val data: List<BusData>,
+    val message: String,
+    val statusCode: Int
+)
+
 interface ApiService {
-    @GET("api/bus/location")
+    @GET("api/tracking")
     fun getData(): Call<DataResponse>
 }
-
-data class DataResponse(val data: List<BusData>)
-data class BusData(val bus_id: String, val id: Int, val latitude: Double, val longitude: Double, val timestamp: String)
