@@ -1,17 +1,17 @@
 package com.example.bipolnavbar
 
-import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
-import android.widget.ListView
-import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.example.bipolnavbar.databinding.FragmentAnnouncementBinding
+import com.example.bipolnavbar.databinding.ItemAnnouncementBinding
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.launch
 import retrofit2.Response
@@ -19,74 +19,64 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import okhttp3.OkHttpClient
-import okhttp3.Interceptor
 import okhttp3.Request
-
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
 class Announcement : Fragment() {
 
+    private var _binding: FragmentAnnouncementBinding? = null
+    private val binding get() = _binding!!
+    
     private lateinit var announcementService: AnnouncementService
-    private lateinit var listView: ListView
     private lateinit var adapter: AnnouncementAdapter
-    private lateinit var progressBar: ProgressBar
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            // Handle any arguments here if needed
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        val view = inflater.inflate(R.layout.fragment_announcement, container, false)
-        listView = view.findViewById(R.id.listView)
-        progressBar = view.findViewById(R.id.progressBar)
-        return view
+    ): View {
+        _binding = FragmentAnnouncementBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Initialize Retrofit Service
+        setupRecyclerView()
         announcementService = AnnouncementService.create()
 
-        // Fetch data from API using coroutine
+        fetchAnnouncements()
+    }
+
+    private fun setupRecyclerView() {
+        adapter = AnnouncementAdapter()
+        binding.recyclerView.apply {
+            layoutManager = LinearLayoutManager(requireContext())
+            adapter = this@Announcement.adapter
+        }
+    }
+
+    private fun fetchAnnouncements() {
         lifecycleScope.launch {
             try {
-                progressBar.visibility = View.VISIBLE
+                binding.progressBar.visibility = View.VISIBLE
                 val response = announcementService.getAnnouncements()
 
                 if (response.isSuccessful) {
                     val announcements = response.body()?.data ?: emptyList()
-
-                    // Use AnnouncementAdapter with List<AnnouncementItem>
-                    adapter = AnnouncementAdapter(requireContext(), announcements)
-                    listView.adapter = adapter
+                    adapter.submitList(announcements)
                 } else {
-                    Toast.makeText(requireContext(), "Failed to fetch data", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Gagal mengambil data", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-//                Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                // Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             } finally {
-                progressBar.visibility = View.GONE
+                binding.progressBar.visibility = View.GONE
             }
         }
     }
 
-    companion object {
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            Announcement().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
-                }
-            }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }
 
@@ -97,36 +87,32 @@ data class AnnouncementItem(
     val time: String
 )
 
-class AnnouncementAdapter(private val context: Context, private val data: List<AnnouncementItem>) : ArrayAdapter<AnnouncementItem>(context, 0, data) {
+class AnnouncementAdapter : RecyclerView.Adapter<AnnouncementAdapter.ViewHolder>() {
 
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-        var itemView = convertView
-        val viewHolder: ViewHolder
+    private var data: List<AnnouncementItem> = emptyList()
 
-        if (itemView == null) {
-            itemView = LayoutInflater.from(context).inflate(R.layout.fragment_announcement, parent, false)
-            viewHolder = ViewHolder()
-            viewHolder.createdByTextView = itemView.findViewById(R.id.createdByTextView)
-            viewHolder.messageTextView = itemView.findViewById(R.id.messageTextView)
-            viewHolder.timeTextView = itemView.findViewById(R.id.timeTextView)
-            itemView.tag = viewHolder
-        } else {
-            viewHolder = itemView.tag as ViewHolder
-        }
-
-        val currentItem = data[position]
-
-        viewHolder.createdByTextView.text = "Posted by: ${currentItem.createdBy}"
-        viewHolder.messageTextView.text = currentItem.message
-        viewHolder.timeTextView.text = currentItem.time
-
-        return itemView!!
+    fun submitList(newList: List<AnnouncementItem>) {
+        data = newList
+        notifyDataSetChanged()
     }
 
-    private class ViewHolder {
-        lateinit var createdByTextView: TextView
-        lateinit var messageTextView: TextView
-        lateinit var timeTextView: TextView
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val binding = ItemAnnouncementBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        return ViewHolder(binding)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.bind(data[position])
+    }
+
+    override fun getItemCount(): Int = data.size
+
+    class ViewHolder(private val binding: ItemAnnouncementBinding) : RecyclerView.ViewHolder(binding.root) {
+        fun bind(item: AnnouncementItem) {
+            binding.createdByTextView.text = "Posted by: ${item.createdBy}"
+            binding.messageTextView.text = item.message
+            binding.timeTextView.text = item.time
+        }
     }
 }
 
