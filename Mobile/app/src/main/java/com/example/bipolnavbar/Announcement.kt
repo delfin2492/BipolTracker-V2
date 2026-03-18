@@ -5,11 +5,9 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import android.widget.Toast
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.example.bipolnavbar.databinding.FragmentAnnouncementBinding
 import com.example.bipolnavbar.databinding.ItemAnnouncementBinding
 import com.google.gson.annotations.SerializedName
@@ -24,7 +22,8 @@ import okhttp3.Request
 class Announcement : Fragment() {
 
     private var _binding: FragmentAnnouncementBinding? = null
-    private val binding get() = _binding!!
+    // Menggunakan safe call untuk menghindari NullPointerException saat fragment sudah dihancurkan
+    private val binding get() = _binding
     
     private lateinit var announcementService: AnnouncementService
     private lateinit var adapter: AnnouncementAdapter
@@ -34,7 +33,7 @@ class Announcement : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         _binding = FragmentAnnouncementBinding.inflate(inflater, container, false)
-        return binding.root
+        return _binding!!.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -48,7 +47,7 @@ class Announcement : Fragment() {
 
     private fun setupRecyclerView() {
         adapter = AnnouncementAdapter()
-        binding.recyclerView.apply {
+        binding?.recyclerView?.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = this@Announcement.adapter
         }
@@ -57,19 +56,36 @@ class Announcement : Fragment() {
     private fun fetchAnnouncements() {
         lifecycleScope.launch {
             try {
-                binding.progressBar.visibility = View.VISIBLE
+                // Gunakan safe call pada binding
+                binding?.apply {
+                    shimmerView.visibility = View.VISIBLE
+                    shimmerView.startShimmer()
+                    recyclerView.visibility = View.GONE
+                }
+
                 val response = announcementService.getAnnouncements()
 
                 if (response.isSuccessful) {
                     val announcements = response.body()?.data ?: emptyList()
                     adapter.submitList(announcements)
+                    
+                    binding?.apply {
+                        shimmerView.stopShimmer()
+                        shimmerView.visibility = View.GONE
+                        recyclerView.visibility = View.VISIBLE
+                    }
                 } else {
-                    Toast.makeText(requireContext(), "Gagal mengambil data", Toast.LENGTH_SHORT).show()
+                    if (isAdded) {
+                        Toast.makeText(requireContext(), "Gagal mengambil data", Toast.LENGTH_SHORT).show()
+                    }
                 }
             } catch (e: Exception) {
-                // Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                // Log error if needed
             } finally {
-                binding.progressBar.visibility = View.GONE
+                binding?.apply {
+                    shimmerView.stopShimmer()
+                    shimmerView.visibility = View.GONE
+                }
             }
         }
     }
@@ -87,7 +103,7 @@ data class AnnouncementItem(
     val time: String
 )
 
-class AnnouncementAdapter : RecyclerView.Adapter<AnnouncementAdapter.ViewHolder>() {
+class AnnouncementAdapter : androidx.recyclerview.widget.RecyclerView.Adapter<AnnouncementAdapter.ViewHolder>() {
 
     private var data: List<AnnouncementItem> = emptyList()
 
@@ -107,7 +123,7 @@ class AnnouncementAdapter : RecyclerView.Adapter<AnnouncementAdapter.ViewHolder>
 
     override fun getItemCount(): Int = data.size
 
-    class ViewHolder(private val binding: ItemAnnouncementBinding) : RecyclerView.ViewHolder(binding.root) {
+    class ViewHolder(private val binding: ItemAnnouncementBinding) : androidx.recyclerview.widget.RecyclerView.ViewHolder(binding.root) {
         fun bind(item: AnnouncementItem) {
             binding.createdByTextView.text = "Posted by: ${item.createdBy}"
             binding.messageTextView.text = item.message

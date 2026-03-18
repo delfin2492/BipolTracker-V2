@@ -12,18 +12,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Bipolnavbar"
         android:usesCleartextTraffic="true"
-        tools:targetApi="31">
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="33">
 
         <!-- Specify your Google Maps API key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyC8nMIKR89nPaBkDRS8LmcjbUH5jlwg6VE" />
-
-        <activity
-            android:name=".HomeFragment"
-            android:exported="false"
-            android:label="@string/title_activity_homefragment"
-            android:theme="@style/Theme.Bipolnavbar" />
 
         <activity
             android:name=".MainActivity"
