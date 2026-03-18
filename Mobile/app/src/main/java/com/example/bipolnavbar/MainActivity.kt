@@ -10,33 +10,49 @@ import com.google.android.material.color.DynamicColors
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+    
+    // Simpan instance fragment agar tidak dibuat ulang
+    private val homeFragment = Home()
+    private val routeFragment = Route()
+    private val announcementFragment = Announcement()
+    private var activeFragment: Fragment = homeFragment
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Apply Dynamic Colors (Material You)
         DynamicColors.applyToActivityIfAvailable(this)
         
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
         
-        replaceFragment(Home())
+        setupFragments()
 
         binding.bottomNavigationView.setOnItemSelectedListener { item ->
             when(item.itemId){
-                R.id.home -> replaceFragment(Home())
-                R.id.route -> replaceFragment(Route())
-                R.id.announcement -> replaceFragment(Announcement())
-                else -> {}
+                R.id.home -> switchFragment(homeFragment)
+                R.id.route -> switchFragment(routeFragment)
+                R.id.announcement -> switchFragment(announcementFragment)
             }
             true
         }
     }
 
-    private fun replaceFragment(fragment: Fragment){
-        val fragmentManager = supportFragmentManager
-        val fragmentTransaction = fragmentManager.beginTransaction()
-        fragmentTransaction.replace(R.id.frame_layout, fragment)
-        fragmentTransaction.commit()
+    private fun setupFragments() {
+        // Tambahkan semua fragment ke FragmentManager tapi sembunyikan yang lain
+        supportFragmentManager.beginTransaction().apply {
+            add(R.id.frame_layout, announcementFragment, "announcement").hide(announcementFragment)
+            add(R.id.frame_layout, routeFragment, "route").hide(routeFragment)
+            add(R.id.frame_layout, homeFragment, "home") // Home fragment tampil pertama
+        }.commit()
+    }
+
+    private fun switchFragment(fragment: Fragment) {
+        if (fragment !== activeFragment) {
+            supportFragmentManager.beginTransaction()
+                .hide(activeFragment)
+                .show(fragment)
+                .commit()
+            activeFragment = fragment
+        }
     }
 }
