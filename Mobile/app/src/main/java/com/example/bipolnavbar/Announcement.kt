@@ -178,7 +178,7 @@ interface AnnouncementService {
                 val request = chain.request().newBuilder().header("Authorization", "cff2f609d3accf61df924590eac88bc2e5107eb3df47af97576f3ab6139e59bc").build()
                 chain.proceed(request)
             }.build()
-            return Retrofit.Builder().baseUrl("http://72.61.141.118:3000/api/").client(client).addConverterFactory(GsonConverterFactory.create()).build().create(AnnouncementService::class.java)
+            return Retrofit.Builder().baseUrl("https://hexacomm.or.id/api/").client(client).addConverterFactory(GsonConverterFactory.create()).build().create(AnnouncementService::class.java)
         }
     }
 }

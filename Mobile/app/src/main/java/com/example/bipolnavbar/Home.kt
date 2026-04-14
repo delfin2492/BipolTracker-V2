@@ -88,7 +88,7 @@ class Home : Fragment(), OnMapReadyCallback {
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 15.5f))
 
         val retrofit = Retrofit.Builder()
-            .baseUrl("http://72.61.141.118:3000/")
+            .baseUrl("https://hexacomm.or.id/")
             .addConverterFactory(GsonConverterFactory.create())
             .client(createOkHttpClient())
             .build()
