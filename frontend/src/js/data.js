@@ -183,6 +183,7 @@ export const ruteSore = [
     [106.831697, -6.351814]
 ];
 
-export const bounds = new maplibregl.LngLatBounds();
-rutePagi.forEach(c => bounds.extend(c));
-ruteSore.forEach(c => bounds.extend(c));
+export const bounds = new maplibregl.LngLatBounds(
+    [106.550, -6.650], // Southwest (Bogor/Tangerang)
+    [107.050, -6.050]  // Northeast (Jakut/Bekasi)
+);

@@ -80,7 +80,7 @@ export function initMap() {
         bearing: 0,
         antialias: true,
         maxZoom: 18,
-        minZoom: 13
+        minZoom: 9
     });
 
     map.on('load', () => {

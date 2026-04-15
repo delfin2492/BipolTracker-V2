@@ -34,11 +34,11 @@ class Home : Fragment(), OnMapReadyCallback {
     private lateinit var floatingLogo: ImageView
     private lateinit var fabCenter: FloatingActionButton
     
-    // Titik Tengah & Batas Area (Lock Area)
-    private val desiredLocation = LatLng(-6.360491, 106.827123)
+    // Titik Tengah & Batas Area Jabodetabek
+    private val desiredLocation = LatLng(-6.200000, 106.816666) // Pusat Jakarta
     private val areaBounds = LatLngBounds(
-        LatLng(-6.375, 106.815), // Sudut Barat Daya (Southwest)
-        LatLng(-6.345, 106.840)  // Sudut Timur Laut (Northeast)
+        LatLng(-6.650, 106.550), // Sudut Barat Daya (Southwest - Bogor/Tangerang)
+        LatLng(-6.050, 107.050)  // Sudut Timur Laut (Northeast - Jakut/Bekasi)
     )
 
     private val checkInterval: Long = 5000
@@ -60,7 +60,7 @@ class Home : Fragment(), OnMapReadyCallback {
         mapView.getMapAsync(this)
 
         fabCenter.setOnClickListener {
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 15.5f))
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 10.0f))
         }
 
         return rootView
@@ -70,8 +70,8 @@ class Home : Fragment(), OnMapReadyCallback {
         this.googleMap = map ?: return
 
         // --- LOCK MAPS SETTINGS ---
-        googleMap.setLatLngBoundsForCameraTarget(areaBounds) // Kunci agar tidak bisa geser jauh
-        googleMap.setMinZoomPreference(14.0f) // Kunci Zoom Out (agar tidak terlalu jauh)
+        googleMap.setLatLngBoundsForCameraTarget(areaBounds) // Batasi maksimal pergeseran GPS
+        googleMap.setMinZoomPreference(9.0f) // Izinkan Zoom Out hingga mode Jabodetabek
         googleMap.setMaxZoomPreference(18.0f) // Kunci Zoom In
         // --------------------------
 
@@ -85,7 +85,7 @@ class Home : Fragment(), OnMapReadyCallback {
         setupRoutes()
         addStaticMarkers()
 
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 15.5f))
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 10.0f))
 
         val retrofit = Retrofit.Builder()
             .baseUrl("https://hexacomm.or.id/")
@@ -235,7 +235,7 @@ class Home : Fragment(), OnMapReadyCallback {
         }
 
         if (isFirstLoad && busList.isNotEmpty()) {
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 15.5f))
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(desiredLocation, 10.0f))
             isFirstLoad = false
         }
     }
