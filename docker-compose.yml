@@ -7,6 +7,4 @@ services:
       - "${UDP_PORT:-3333}:${UDP_PORT:-3333}/udp"
     env_file:
       - .env
-    volumes:
-      - ./backend/public:/app/backend/public
     restart: unless-stopped
