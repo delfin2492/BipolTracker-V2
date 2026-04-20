@@ -437,6 +437,14 @@ export function updateMarker(bus) {
                     <i class="fa-solid fa-fire"></i>
                     <span>${bus.gas_level}</span>
                 </div>
+                <div class="popup-stat">
+                    <i class="fa-solid fa-cloud"></i>
+                    <span>${bus.co2 !== undefined ? bus.co2 : 0} PPM</span>
+                </div>
+                <div class="popup-stat">
+                    <i class="fa-solid fa-wifi"></i>
+                    <span>${bus.rssi !== undefined ? bus.rssi : 0} dBm</span>
+                </div>
             </div>
             ${etaHtml}
         </div>

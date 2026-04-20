@@ -164,6 +164,20 @@
                         <div class="stat-number" id="totalEntries">0</div>
                     </div>
                 </div>
+                <div class="analytics-stat-card">
+                    <i class="fa-solid fa-cloud stat-icon" style="color:#64748b;"></i>
+                    <div class="stat-info">
+                        <div class="stat-label">Avg CO2</div>
+                        <div class="stat-number" id="avgCo2">0 PPM</div>
+                    </div>
+                </div>
+                <div class="analytics-stat-card">
+                    <i class="fa-solid fa-wifi stat-icon" style="color:#3b82f6;"></i>
+                    <div class="stat-info">
+                        <div class="stat-label">Avg RSSI</div>
+                        <div class="stat-number" id="avgRssi">0 dBm</div>
+                    </div>
+                </div>
             </div>
 
             <div class="charts-grid">
@@ -219,6 +233,8 @@
                             <th>Coordinates</th>
                             <th>Speed</th>
                             <th>Gas</th>
+                            <th>CO2</th>
+                            <th>RSSI</th>
                             <th>Time</th>
                         </tr>
                     </thead>
@@ -798,7 +814,9 @@
                     <td class="data-highlight" style="font-size:0.85rem">${(log.latitude || 0).toFixed(5)}, ${(log.longitude || 0).toFixed(5)}</td>
                     <td>${log.speed || 0} km/h</td>
                     <td class="data-highlight">${log.gas_level || 0}</td>
-                    <td style="color:var(--text-light);">${time}</td>
+                    <td class="data-highlight">${log.co2 || 0} PPM</td>
+                    <td class="data-highlight">${log.rssi || 0} dBm</td>
+                    <td style="color:var(--text-light); font-size:0.85rem">${time}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1117,11 +1135,15 @@
             const avgSpeed = allLogs.reduce((sum, log) => sum + (log.speed || 0), 0) / allLogs.length;
             const maxGas = Math.max(...allLogs.map(log => log.gas_level || 0));
             const uniqueHours = new Set(allLogs.map(log => new Date(log.created_at).getHours())).size;
+            const avgCo2 = allLogs.reduce((sum, log) => sum + (log.co2 || 0), 0) / allLogs.length;
+            const avgRssi = allLogs.reduce((sum, log) => sum + (log.rssi || 0), 0) / allLogs.length;
 
             document.getElementById('avgSpeed').textContent = avgSpeed.toFixed(1) + ' km/h';
             document.getElementById('maxGas').textContent = maxGas;
             document.getElementById('activeHours').textContent = uniqueHours + 'h';
             document.getElementById('totalEntries').textContent = allLogs.length;
+            document.getElementById('avgCo2').textContent = avgCo2.toFixed(0) + ' PPM';
+            document.getElementById('avgRssi').textContent = avgRssi.toFixed(0) + ' dBm';
 
             const last20 = allLogs.slice(0, 20).reverse();
             const speedLabels = last20.map(log => new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
@@ -1228,13 +1250,15 @@
                 return;
             }
 
-            const headers = ['Bus ID', 'Latitude', 'Longitude', 'Speed', 'Gas Level', 'Time'];
+            const headers = ['Bus ID', 'Latitude', 'Longitude', 'Speed', 'Gas Level', 'CO2 (PPM)', 'RSSI (dBm)', 'Time'];
             const rows = allLogs.map(log => [
                 log.bus_id,
                 log.latitude,
                 log.longitude,
                 log.speed,
                 log.gas_level,
+                log.co2 || 0,
+                log.rssi || 0,
                 new Date(log.created_at).toLocaleString()
             ]);
 

@@ -74,7 +74,7 @@ const logger = {
 
     udp: {
         raw: (address, port, message) => logger.debug(`📨 UDP RAW from ${address}:${port} -> ${message}`),
-        parsed: (busId, lat, lon, speed, gas) => logger.info(`📡 [UDP] ${busId} | 📍 ${lat.toFixed(6)},${lon.toFixed(6)} | 🚀 ${speed} | ⛽ ${gas}`),
+        parsed: (busId, lat, lon, speed, gas, co2, rssi) => logger.info(`📡 [UDP] ${busId} | 📍 ${lat.toFixed(6)},${lon.toFixed(6)} | 🚀 ${speed} | ⛽ ${gas} | 💨 ${co2} | 📶 ${rssi}`),
         listening: (port) => logger.info(`⚡ UDP Server listening on Port ${port}`),
         error: (err) => logger.error(`❌ UDP Error: ${err.message}`, { stack: err.stack })
     },

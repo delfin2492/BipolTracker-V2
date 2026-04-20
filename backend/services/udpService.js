@@ -29,10 +29,14 @@ function startUdpServer(io) {
             const longitude = parseFloat(parts[2]);
             const speed = parseFloat(parts[3]);
             const gas_level = parseInt(parts[4]);
+            
+            // New metrics (fallback to 0 if not sent to maintain backwards compatibility)
+            const co2 = parts.length > 5 ? parseInt(parts[5]) || 0 : 0;
+            const rssi = parts.length > 6 ? parseInt(parts[6]) || 0 : 0;
 
             if (!bus_id || !validate.coordinate(latitude) || !validate.coordinate(longitude)) return;
 
-            logger.udp.parsed(bus_id, latitude, longitude, speed, gas_level);
+            logger.udp.parsed(bus_id, latitude, longitude, speed, gas_level, co2, rssi);
 
             let cleanSpeed = validate.speed(speed) ? speed : 0;
             const minSpeed = parseFloat(getSettingSync('UDP_MIN_SPEED_THRESHOLD'));
@@ -42,6 +46,8 @@ function startUdpServer(io) {
                 bus_id, latitude, longitude,
                 speed: cleanSpeed,
                 gas_level: validate.gasLevel(gas_level) ? gas_level : 0,
+                co2: co2,
+                rssi: rssi,
                 created_at: new Date().toISOString()
             };
 

@@ -34,6 +34,8 @@ CREATE TABLE "bipol_tracker" (
     "longitude" DOUBLE PRECISION NOT NULL,
     "speed" DOUBLE PRECISION DEFAULT 0,
     "gas_level" INTEGER DEFAULT 0,
+    "co2" INTEGER DEFAULT 0,
+    "rssi" INTEGER DEFAULT 0,
     "created_at" TIMESTAMPTZ DEFAULT NOW()
 );
 
