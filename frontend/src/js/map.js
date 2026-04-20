@@ -428,7 +428,7 @@ export function updateMarker(bus) {
                     </div>
                 </div>
             </div>
-            <div class="popup-stats">
+            <div class="popup-stats" style="display: grid; grid-template-columns: 1fr 1fr; row-gap: 8px; column-gap: 6px;">
                 <div class="popup-stat">
                     <i class="fa-solid fa-gauge"></i>
                     <span>${bus.speed} km/h</span>
