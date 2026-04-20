@@ -384,6 +384,7 @@ export function add3DBuildings() {
 export function updateMarker(bus) {
     const targetPos = [bus.longitude, bus.latitude];
     const gasClass = bus.gas_level > GAS_ALERT_THRESHOLD ? 'popup-danger' : '';
+    const co2Class = (bus.co2 !== undefined && bus.co2 > CO2_ALERT_THRESHOLD) ? 'popup-danger' : '';
 
     const busStatus = getBusStatus(bus);
     const statusText = busStatus.status;
@@ -416,9 +417,6 @@ export function updateMarker(bus) {
 
         checkAndShowArrivalNotification(bus, nearest);
     }
-
-    const gasClass = bus.gas_level > GAS_ALERT_THRESHOLD ? 'popup-danger' : '';
-    const co2Class = (bus.co2 !== undefined && bus.co2 > CO2_ALERT_THRESHOLD) ? 'popup-danger' : '';
 
     const content = `
         <div class="bus-popup">
