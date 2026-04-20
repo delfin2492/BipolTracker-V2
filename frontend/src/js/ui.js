@@ -1,6 +1,6 @@
 import { stops, bounds } from './data.js';
 import { getMap, setFollowBusId, getFollowBusId, toggleRoute, closeAllPopups, getMapPadding } from './map.js';
-import { getBusStatus, updateStatusConfig, GAS_ALERT_THRESHOLD } from './status.js';
+import { getBusStatus, updateStatusConfig, GAS_ALERT_THRESHOLD, CO2_ALERT_THRESHOLD } from './status.js';
 import * as turf from 'https://cdn.jsdelivr.net/npm/@turf/turf@7/+esm';
 
 let lastAlert = 0;
@@ -172,6 +172,22 @@ export function checkAlerts(bus) {
             background: 'transparent',
             customClass: { popup: 'gas-alert-popup' },
             backdrop: `rgba(191,30,46,0.2)`
+        });
+        lastAlert = Date.now();
+    } else if (bus.co2 !== undefined && bus.co2 > CO2_ALERT_THRESHOLD && Date.now() - lastAlert > 30000) {
+        Swal.fire({
+            html: `
+                <div class="gas-warning-icon"><i class="fa-solid fa-cloud"></i></div>
+                <div class="gas-alert-title">POLUSI CO2 TINGGI</div>
+                <div class="gas-value-display">${bus.co2} PPM</div>
+                <div class="gas-alert-text">Segera periksa kualitas udara armada ${bus.bus_id}</div>
+            `,
+            showConfirmButton: true,
+            confirmButtonText: 'MENGERTI',
+            confirmButtonColor: '#475569',
+            background: 'transparent',
+            customClass: { popup: 'gas-alert-popup' },
+            backdrop: `rgba(71,85,105,0.2)`
         });
         lastAlert = Date.now();
     }

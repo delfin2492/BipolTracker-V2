@@ -1,10 +1,12 @@
 
 const busLastMovedTime = {};
 export let GAS_ALERT_THRESHOLD = 600;
+export let CO2_ALERT_THRESHOLD = 1000;
 let BUS_STOP_TIMEOUT_MINUTES = 5;
 
 export function updateStatusConfig(config) {
     if (config.gasAlertThreshold) GAS_ALERT_THRESHOLD = config.gasAlertThreshold;
+    if (config.co2AlertThreshold) CO2_ALERT_THRESHOLD = config.co2AlertThreshold;
     if (config.busStopTimeoutMinutes) BUS_STOP_TIMEOUT_MINUTES = config.busStopTimeoutMinutes;
 }
 

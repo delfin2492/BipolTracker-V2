@@ -143,7 +143,7 @@ map.on('load', () => {
             if (map) {
                 const maxBounds = map.getMaxBounds();
                 if (!maxBounds || maxBounds.contains([bus.longitude, bus.latitude])) {
-                    map.flyTo({ center: [bus.longitude, bus.latitude], speed: 0.5 });
+                    map.easeTo({ center: [bus.longitude, bus.latitude], duration: 1000 });
                 }
             }
         }
@@ -218,7 +218,7 @@ async function fetchData() {
                 if (map) {
                     const maxBounds = map.getMaxBounds();
                     if (!maxBounds || maxBounds.contains([bus.longitude, bus.latitude])) {
-                        map.flyTo({ center: [bus.longitude, bus.latitude], speed: 0.5 });
+                        map.easeTo({ center: [bus.longitude, bus.latitude], duration: 1000 });
                     }
                 }
             }
