@@ -89,8 +89,10 @@ export function updateSidebar(bus, list, index) {
     const busStatus = getBusStatus(bus);
     let statusDot = busStatus.class;
     if (bus.gas_level > GAS_ALERT_THRESHOLD) statusDot = 'dot-red';
+    if (bus.co2 !== undefined && bus.co2 > CO2_ALERT_THRESHOLD) statusDot = 'dot-red';
 
     const gasClass = bus.gas_level > GAS_ALERT_THRESHOLD ? 'text-danger' : '';
+    const co2Class = (bus.co2 !== undefined && bus.co2 > CO2_ALERT_THRESHOLD) ? 'text-danger' : '';
     const eta = calculateETA(bus);
 
     item.innerHTML = `
@@ -101,7 +103,7 @@ export function updateSidebar(bus, list, index) {
             <span><i class="fa-solid fa-gauge"></i> ${bus.speed} km/h</span> &bull;
             <span class="${gasClass}"><i class="fa-solid fa-fire"></i> ${bus.gas_level}</span></p>
             <p style="opacity: 0.8; font-size: 0.85em;">
-                <span><i class="fa-solid fa-cloud"></i> ${bus.co2 !== undefined ? bus.co2 : 0} PPM</span> &bull;
+                <span class="${co2Class}"><i class="fa-solid fa-cloud"></i> ${bus.co2 !== undefined ? bus.co2 : 0} PPM</span> &bull;
                 <span><i class="fa-solid fa-wifi"></i> ${bus.rssi !== undefined ? bus.rssi : 0} dBm</span>
             </p>
         </div>`;

@@ -1,6 +1,6 @@
 import { initMap, addRoutes, addStops, add3DBuildings, updateMarker, removeInactiveMarkers, getMap, setFollowBusId, getFollowBusId } from './map.js';
 import { setupControls, updateSidebar, calculateETA, checkAlerts, switchTab, closeImage } from './ui.js';
-import { updateStatusConfig, GAS_ALERT_THRESHOLD, getBusStatus } from './status.js';
+import { updateStatusConfig, GAS_ALERT_THRESHOLD, CO2_ALERT_THRESHOLD, getBusStatus } from './status.js';
 
 
 fetch('/api/config')
@@ -38,7 +38,10 @@ map.on('load', () => {
             const busStatus = getBusStatus(bus);
             let statusDot = busStatus.class;
             if (bus.gas_level > GAS_ALERT_THRESHOLD) statusDot = 'dot-red';
+            if (bus.co2 !== undefined && bus.co2 > CO2_ALERT_THRESHOLD) statusDot = 'dot-red';
+
             const gasClass = bus.gas_level > GAS_ALERT_THRESHOLD ? 'text-danger' : '';
+            const co2Class = (bus.co2 !== undefined && bus.co2 > CO2_ALERT_THRESHOLD) ? 'text-danger' : '';
             const eta = calculateETA(bus);
 
             existingItem.innerHTML = `
@@ -49,7 +52,7 @@ map.on('load', () => {
                     <span><i class="fa-solid fa-gauge"></i> ${bus.speed} km/h</span> &bull;
                     <span class="${gasClass}"><i class="fa-solid fa-fire"></i> ${bus.gas_level}</span></p>
                     <p style="opacity: 0.8; font-size: 0.85em;">
-                        <span><i class="fa-solid fa-cloud"></i> ${bus.co2 !== undefined ? bus.co2 : 0} PPM</span> &bull;
+                        <span class="${co2Class}"><i class="fa-solid fa-cloud"></i> ${bus.co2 !== undefined ? bus.co2 : 0} PPM</span> &bull;
                         <span><i class="fa-solid fa-wifi"></i> ${bus.rssi !== undefined ? bus.rssi : 0} dBm</span>
                     </p>
                 </div>`;
@@ -89,15 +92,22 @@ map.on('load', () => {
             item.className = 'bus-item';
             item.id = `bus-item-${bus.bus_id}`;
 
-            let statusDot = bus.speed < 1 ? 'dot-gray' : 'dot-green';
+            const busStatus = getBusStatus(bus);
+            let statusDot = busStatus.class;
+            if (bus.gas_level > GAS_ALERT_THRESHOLD) statusDot = 'dot-red';
+            if (bus.co2 !== undefined && bus.co2 > CO2_ALERT_THRESHOLD) statusDot = 'dot-red';
+
+            const gasClass = bus.gas_level > GAS_ALERT_THRESHOLD ? 'text-danger' : '';
+            const co2Class = (bus.co2 !== undefined && bus.co2 > CO2_ALERT_THRESHOLD) ? 'text-danger' : '';
+
             item.innerHTML = `
                 <div class="bus-icon-wrapper"><img src="./images/bipol.png"></div>
                 <div class="bus-info">
                     <h4>${bus.bus_id} <span class="status-dot ${statusDot}"></span></h4>
                     <p style="margin-bottom: 2px;"><span><i class="fa-solid fa-gauge"></i> ${bus.speed} km/h</span> &bull;
-                    <span><i class="fa-solid fa-fire"></i> ${bus.gas_level}</span></p>
+                    <span class="${gasClass}"><i class="fa-solid fa-fire"></i> ${bus.gas_level}</span></p>
                     <p style="opacity: 0.8; font-size: 0.85em;">
-                        <span><i class="fa-solid fa-cloud"></i> ${bus.co2 !== undefined ? bus.co2 : 0} PPM</span> &bull;
+                        <span class="${co2Class}"><i class="fa-solid fa-cloud"></i> ${bus.co2 !== undefined ? bus.co2 : 0} PPM</span> &bull;
                         <span><i class="fa-solid fa-wifi"></i> ${bus.rssi !== undefined ? bus.rssi : 0} dBm</span>
                     </p>
                 </div>`;
