@@ -193,6 +193,17 @@
 
             <div class="charts-grid">
                 <div class="chart-card">
+                    <h3><i class="fa-solid fa-cloud"></i> CO2 Over Time</h3>
+                    <canvas id="co2Chart"></canvas>
+                </div>
+                <div class="chart-card">
+                    <h3><i class="fa-solid fa-wifi"></i> RSSI Signal History</h3>
+                    <canvas id="rssiChart"></canvas>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-card">
                     <h3><i class="fa-solid fa-chart-pie"></i> Bus Activity</h3>
                     <canvas id="activityChart"></canvas>
                 </div>
@@ -1171,6 +1182,48 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const co2Data = last20.map(log => log.co2 || 0);
+            const ctxCo2 = document.getElementById('co2Chart').getContext('2d');
+            new Chart(ctxCo2, {
+                type: 'line',
+                data: {
+                    labels: speedLabels,
+                    datasets: [{
+                        label: 'CO2 (PPM)',
+                        data: co2Data,
+                        borderColor: '#64748b',
+                        backgroundColor: 'rgba(100, 116, 139, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            const rssiData = last20.map(log => log.rssi || 0);
+            const ctxRssi = document.getElementById('rssiChart').getContext('2d');
+            new Chart(ctxRssi, {
+                type: 'line',
+                data: {
+                    labels: speedLabels,
+                    datasets: [{
+                        label: 'RSSI (dBm)',
+                        data: rssiData,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
                     plugins: { legend: { display: false } }
                 }
             });
