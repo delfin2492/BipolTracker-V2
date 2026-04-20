@@ -27,6 +27,7 @@ exports.getConfig = async (req, res) => {
     const { getSetting } = require('../services/settingsService');
     res.json({
         gasAlertThreshold: parseInt(await getSetting('GAS_ALERT_THRESHOLD')),
+        co2AlertThreshold: parseInt(await getSetting('CO2_ALERT_THRESHOLD')),
         busStopTimeoutMinutes: parseInt(await getSetting('BUS_STOP_TIMEOUT_MINUTES'))
     });
 };
