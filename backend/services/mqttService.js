@@ -10,7 +10,9 @@ let mqttClient = null;
 let currentTopic = null;
 
 function startMqttClient(io) {
-    const brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://mosquitto:1883';
+    // Note: If Mosquitto runs on the VPS host, the Docker container should connect to the Docker Host IP
+    // like mqtt://172.17.0.1:1883 or the VPS Public IP. Define this in your .env file!
+    const brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://172.17.0.1:1883';
     
     mqttClient = mqtt.connect(brokerUrl, {
         username: process.env.MQTT_USERNAME || '',
