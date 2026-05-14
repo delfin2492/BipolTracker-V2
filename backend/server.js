@@ -11,7 +11,7 @@ const helmet = require('helmet');
 const hpp = require('hpp');
 
 const supabase = require('./config/supabase');
-const { startUdpServer } = require('./services/udpService');
+const { startMqttClient } = require('./services/mqttService');
 const { setIo } = require('./services/geofenceService');
 const { startCleanupJobs } = require('./services/cleanup');
 const logger = require('./utils/logger');
@@ -177,7 +177,7 @@ app.use((err, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
-const udpServer = startUdpServer(io);
+const mqttClient = startMqttClient(io);
 startCleanupJobs();
 
 io.on('connection', (socket) => {
@@ -190,7 +190,7 @@ io.on('connection', (socket) => {
 process.on('SIGTERM', () => {
     logger.server.shutdown();
     server.close(() => {
-        udpServer.close();
+        if (mqttClient) mqttClient.end();
         logger.server.closed();
         process.exit(0);
     });

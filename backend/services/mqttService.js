@@ -1,24 +1,55 @@
-const dgram = require('dgram');
+const mqtt = require('mqtt');
 const validate = require('../utils/validators');
 const sanitizeInput = require('../utils/sanitizer');
 const supabase = require('../config/supabase');
 const { checkGeofence } = require('./geofenceService');
-const { getSettingSync } = require('./settingsService');
+const { getSettingSync, onSettingsUpdated } = require('./settingsService');
 const logger = require('../utils/logger');
 
-const UDP_PORT = process.env.UDP_PORT || 3333;
+let mqttClient = null;
+let currentTopic = null;
 
-function startUdpServer(io) {
-    const udpServer = dgram.createSocket('udp4');
-
-    udpServer.on('error', (err) => {
-        logger.udp.error(err);
-        udpServer.close();
+function startMqttClient(io) {
+    const brokerUrl = process.env.MQTT_BROKER_URL || 'mqtt://mosquitto:1883';
+    
+    mqttClient = mqtt.connect(brokerUrl, {
+        username: process.env.MQTT_USERNAME || '',
+        password: process.env.MQTT_PASSWORD || '',
+        reconnectPeriod: 5000,
     });
 
-    udpServer.on('message', async (msg, rinfo) => {
+    mqttClient.on('connect', () => {
+        logger.mqtt.connected(brokerUrl);
+        
+        // Initial subscription
+        currentTopic = getSettingSync('MQTT_TOPIC');
+        if (currentTopic) {
+            mqttClient.subscribe(currentTopic, (err) => {
+                if (!err) logger.mqtt.subscribed(currentTopic);
+                else logger.mqtt.error(err);
+            });
+        }
+    });
+
+    // Listen for settings changes to update topic dynamically
+    onSettingsUpdated((newSettings) => {
+        const newTopic = newSettings['MQTT_TOPIC'];
+        if (newTopic && newTopic !== currentTopic && mqttClient && mqttClient.connected) {
+            if (currentTopic) mqttClient.unsubscribe(currentTopic);
+            currentTopic = newTopic;
+            mqttClient.subscribe(currentTopic, (err) => {
+                if (!err) logger.mqtt.subscribed(currentTopic);
+            });
+        }
+    });
+
+    mqttClient.on('error', (err) => {
+        logger.mqtt.error(err);
+    });
+
+    mqttClient.on('message', async (topic, msg) => {
         const rawMessage = msg.toString().trim();
-        logger.udp.raw(rinfo.address, rinfo.port, rawMessage);
+        logger.mqtt.raw(topic, rawMessage);
 
         try {
             const parts = rawMessage.split(',');
@@ -36,7 +67,7 @@ function startUdpServer(io) {
 
             if (!bus_id || !validate.coordinate(latitude) || !validate.coordinate(longitude)) return;
 
-            logger.udp.parsed(bus_id, latitude, longitude, speed, gas_level, co2, rssi);
+            logger.mqtt.parsed(bus_id, latitude, longitude, speed, gas_level, co2, rssi);
 
             let cleanSpeed = validate.speed(speed) ? speed : 0;
             const minSpeed = parseFloat(getSettingSync('UDP_MIN_SPEED_THRESHOLD'));
@@ -64,16 +95,11 @@ function startUdpServer(io) {
             }
 
         } catch (err) {
-            logger.error('UDP message processing error', { error: err.message });
+            logger.error('MQTT message processing error', { error: err.message });
         }
     });
 
-    udpServer.bind(UDP_PORT, () => {
-        logger.udp.listening(UDP_PORT);
-    });
-
-    return udpServer;
+    return mqttClient;
 }
 
-module.exports = { startUdpServer };
-
+module.exports = { startMqttClient };

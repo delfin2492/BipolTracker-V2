@@ -72,11 +72,12 @@ const logger = {
         disconnect: (id, reason) => logger.debug(`❌ Client disconnected: ${id} (${reason})`)
     },
 
-    udp: {
-        raw: (address, port, message) => logger.debug(`📨 UDP RAW from ${address}:${port} -> ${message}`),
-        parsed: (busId, lat, lon, speed, gas, co2, rssi) => logger.info(`📡 [UDP] ${busId} | 📍 ${lat.toFixed(6)},${lon.toFixed(6)} | 🚀 ${speed} | ⛽ ${gas} | 💨 ${co2} | 📶 ${rssi}`),
-        listening: (port) => logger.info(`⚡ UDP Server listening on Port ${port}`),
-        error: (err) => logger.error(`❌ UDP Error: ${err.message}`, { stack: err.stack })
+    mqtt: {
+        raw: (topic, message) => logger.debug(`📨 MQTT RAW [${topic}] -> ${message}`),
+        parsed: (busId, lat, lon, speed, gas, co2, rssi) => logger.info(`📡 [MQTT] ${busId} | 📍 ${lat.toFixed(6)},${lon.toFixed(6)} | 🚀 ${speed} | ⛽ ${gas} | 💨 ${co2} | 📶 ${rssi}`),
+        connected: (url) => logger.info(`⚡ MQTT Client Connected to ${url}`),
+        subscribed: (topic) => logger.info(`⚡ MQTT Subscribed to topic: ${topic}`),
+        error: (err) => logger.error(`❌ MQTT Error: ${err.message}`, { stack: err.stack })
     },
 
     geofence: {

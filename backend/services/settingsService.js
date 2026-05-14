@@ -9,8 +9,14 @@ const DEFAULTS = {
     GAS_ALERT_THRESHOLD: '600',
     CO2_ALERT_THRESHOLD: '1000',
     BUS_STOP_TIMEOUT_MINUTES: '5',
-    UDP_MIN_SPEED_THRESHOLD: '3.0'
+    UDP_MIN_SPEED_THRESHOLD: '3.0',
+    MQTT_TOPIC: 'bipol/telemetry'
 };
+
+const listeners = [];
+function onSettingsUpdated(fn) {
+    listeners.push(fn);
+}
 
 async function loadSettings() {
     try {
@@ -81,6 +87,8 @@ async function updateSettings(updates) {
             settingsCache[u.key] = u.value;
         });
 
+        listeners.forEach(fn => fn(settingsCache));
+
         return data;
     } catch (err) {
         logger.error('Update settings error', { error: err.message });
@@ -93,6 +101,7 @@ module.exports = {
     getSetting,
     getSettingSync,
     getAllSettings,
-    updateSettings
+    updateSettings,
+    onSettingsUpdated
 };
 
