@@ -54,18 +54,29 @@ function startMqttClient(io) {
         logger.mqtt.raw(topic, rawMessage);
 
         try {
-            const parts = rawMessage.split(',');
-            if (parts.length < 5) return;
+            let bus_id, latitude, longitude, speed, gas_level, co2, rssi;
 
-            const bus_id = sanitizeInput(parts[0]);
-            const latitude = parseFloat(parts[1]);
-            const longitude = parseFloat(parts[2]);
-            const speed = parseFloat(parts[3]);
-            const gas_level = parseInt(parts[4]);
-            
-            // New metrics (fallback to 0 if not sent to maintain backwards compatibility)
-            const co2 = parts.length > 5 ? parseInt(parts[5]) || 0 : 0;
-            const rssi = parts.length > 6 ? parseInt(parts[6]) || 0 : 0;
+            if (rawMessage.startsWith('{')) {
+                const data = JSON.parse(rawMessage);
+                bus_id = sanitizeInput(data.bus_id || '');
+                latitude = parseFloat(data.latitude);
+                longitude = parseFloat(data.longitude);
+                speed = parseFloat(data.speed);
+                gas_level = parseInt(data.gas);
+                co2 = parseInt(data.co2) || 0;
+                rssi = parseInt(data.rssi) || 0;
+            } else {
+                const parts = rawMessage.split(',');
+                if (parts.length < 5) return;
+
+                bus_id = sanitizeInput(parts[0]);
+                latitude = parseFloat(parts[1]);
+                longitude = parseFloat(parts[2]);
+                speed = parseFloat(parts[3]);
+                gas_level = parseInt(parts[4]);
+                co2 = parts.length > 5 ? parseInt(parts[5]) || 0 : 0;
+                rssi = parts.length > 6 ? parseInt(parts[6]) || 0 : 0;
+            }
 
             if (!bus_id || !validate.coordinate(latitude) || !validate.coordinate(longitude)) return;
 
