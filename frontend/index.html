@@ -42,7 +42,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="/src/css/style.css">
 </head>
 
@@ -612,9 +612,9 @@
         
         <div class="detail-chart-container">
             <div class="chart-tabs">
-                <button class="chart-tab active" onclick="switchChartTab('co2')">CO2</button>
-                <button class="chart-tab" onclick="switchChartTab('gas')">Gas</button>
-                <button class="chart-tab" onclick="switchChartTab('speed')">Speed</button>
+                <button class="chart-tab active" onclick="switchChartTab('co2', this)">CO2</button>
+                <button class="chart-tab" onclick="switchChartTab('gas', this)">Gas</button>
+                <button class="chart-tab" onclick="switchChartTab('speed', this)">Speed</button>
             </div>
             <div class="chart-wrapper">
                 <canvas id="busDetailChart"></canvas>

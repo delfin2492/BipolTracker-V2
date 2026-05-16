@@ -455,6 +455,30 @@ export function updateMarker(bus) {
         const markerObj = busMarkers[bus.bus_id];
         markerObj.marker.setLngLat(targetPos);
         markerObj.marker.getPopup().setHTML(content);
+        
+        // Update the click handler with the latest bus object
+        const el = markerObj.marker.getElement();
+        el.onclick = () => {
+            if (window.openBusDetailSheet) window.openBusDetailSheet(bus);
+            if (getFollowBusId() === bus.bus_id) return;
+
+            const map = getMap();
+            if (map) {
+                const maxBounds = map.getMaxBounds();
+                if (maxBounds && !maxBounds.contains(targetPos)) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'warning', title: 'Bus Diluar Area', text: 'Posisi bus berada di luar jangkauan peta.', toast: true, position: 'top-end', showConfirmButton: false, timer: 3000
+                        });
+                    }
+                    return;
+                }
+                setFollowBusId(bus.bus_id);
+                map.jumpTo({ center: targetPos, zoom: 17.5 });
+                document.querySelectorAll('.bus-item').forEach(i => i.classList.remove('active-focus'));
+            }
+        };
+
         if (getFollowBusId() === bus.bus_id && getMap()) {
             const map = getMap();
             const maxBounds = map.getMaxBounds();
