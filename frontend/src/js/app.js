@@ -1,3 +1,4 @@
+import './detailSheet.js';
 import { initMap, addRoutes, addStops, add3DBuildings, updateMarker, removeInactiveMarkers, getMap, setFollowBusId, getFollowBusId } from './map.js';
 import { setupControls, updateSidebar, calculateETA, checkAlerts, switchTab, closeImage } from './ui.js';
 import { updateStatusConfig, GAS_ALERT_THRESHOLD, CO2_ALERT_THRESHOLD, getBusStatus } from './status.js';
