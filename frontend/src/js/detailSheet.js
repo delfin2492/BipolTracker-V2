@@ -17,7 +17,7 @@ window.openBusDetailSheet = async function (bus) {
 
     // Fetch history
     try {
-        const res = await fetch(`/api/tracker/bus/${bus.bus_id}/logs?limit=40`);
+        const res = await fetch(`/api/bus/${bus.bus_id}/logs?limit=40`);
         const json = await res.json();
         if (json.data) {
             rawLogData = json.data;
