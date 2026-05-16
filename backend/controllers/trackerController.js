@@ -126,3 +126,25 @@ exports.getBusPlates = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch bus list' });
     }
 };
+
+exports.getBusLogs = async (req, res) => {
+    try {
+        const { bus_id } = req.params;
+        const limit = parseInt(req.query.limit) || 30;
+
+        const { data, error } = await supabase
+            .from('bipol_tracker')
+            .select('*')
+            .eq('bus_id', bus_id)
+            .order('created_at', { ascending: false })
+            .limit(limit);
+
+        if (error) throw error;
+        
+        // Reverse so that the oldest is first, which is standard for left-to-right charts
+        res.json({ data: data.reverse() });
+    } catch (err) {
+        logger.error('Get bus logs error', { error: err.message });
+        res.status(500).json({ error: 'Failed to fetch bus logs' });
+    }
+};

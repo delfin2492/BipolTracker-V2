@@ -477,6 +477,9 @@ export function updateMarker(bus) {
         el.appendChild(pulse);
 
         el.onclick = () => {
+            // Open the Bottom Sheet immediately
+            if (window.openBusDetailSheet) window.openBusDetailSheet(bus);
+
             if (getFollowBusId() === bus.bus_id) return;
 
             const map = getMap();

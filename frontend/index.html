@@ -42,6 +42,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="/src/css/style.css">
 </head>
 
@@ -358,6 +359,7 @@
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script type="module" src="/src/js/app.js"></script>
+    <script src="/src/js/detailSheet.js"></script>
 
     <div id="image-modal" class="image-modal" onclick="closeImage()">
         <span class="close-modal">&times;</span><img class="modal-content" id="img01">
@@ -582,6 +584,42 @@
             document.getElementById('offline-indicator').classList.add('show');
         }
     </script>
+    <div id="bus-detail-sheet" class="bus-detail-sheet">
+        <div class="sheet-handle-bar">
+            <div class="sheet-handle"></div>
+        </div>
+        <div class="sheet-header detail-header">
+            <h2 id="detail-bus-name">SIM-UI-01</h2>
+            <button class="fab-btn close-detail-btn" onclick="closeBusDetailSheet()"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div class="detail-stats-grid">
+            <div class="detail-stat">
+                <i class="fa-solid fa-gauge" style="color: #0ea5e9;"></i>
+                <div class="stat-value" id="detail-speed">0</div>
+                <div class="stat-label">km/h</div>
+            </div>
+            <div class="detail-stat">
+                <i class="fa-solid fa-fire" style="color: #f59e0b;"></i>
+                <div class="stat-value" id="detail-gas">0</div>
+                <div class="stat-label">Gas</div>
+            </div>
+            <div class="detail-stat">
+                <i class="fa-solid fa-cloud" style="color: #10b981;"></i>
+                <div class="stat-value" id="detail-co2">0</div>
+                <div class="stat-label">PPM</div>
+            </div>
+        </div>
+        
+        <div class="detail-chart-container">
+            <div class="chart-tabs">
+                <button class="chart-tab active" onclick="switchChartTab('co2')">CO2</button>
+                <button class="chart-tab" onclick="switchChartTab('gas')">Gas</button>
+                <button class="chart-tab" onclick="switchChartTab('speed')">Speed</button>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="busDetailChart"></canvas>
+            </div>
+        </div>
+    </div>
 </body>
-
 </html>

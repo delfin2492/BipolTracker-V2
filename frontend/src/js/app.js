@@ -113,6 +113,8 @@ map.on('load', () => {
                 </div>`;
 
             item.onclick = () => {
+                if (window.openBusDetailSheet) window.openBusDetailSheet(bus);
+
                 if (getFollowBusId() === bus.bus_id) return;
 
                 const map = getMap();
@@ -147,6 +149,10 @@ map.on('load', () => {
 
         calculateETA(bus);
         checkAlerts(bus);
+
+        if (window.updateBusDetailSheet) {
+            window.updateBusDetailSheet(bus);
+        }
 
         if (getFollowBusId() === bus.bus_id) {
             const map = getMap();

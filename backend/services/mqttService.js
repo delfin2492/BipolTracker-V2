@@ -78,7 +78,10 @@ function startMqttClient(io) {
                 rssi = parts.length > 6 ? parseInt(parts[6]) || 0 : 0;
             }
 
-            if (!bus_id || !validate.coordinate(latitude) || !validate.coordinate(longitude)) return;
+            if (!bus_id || !validate.coordinate(latitude) || !validate.coordinate(longitude)) {
+                logger.mqtt.raw(topic, `Validation Failed! bus_id: ${bus_id}, lat: ${latitude}, lng: ${longitude}`);
+                return;
+            }
 
             logger.mqtt.parsed(bus_id, latitude, longitude, speed, gas_level, co2, rssi);
 
