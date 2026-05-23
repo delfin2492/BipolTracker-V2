@@ -26,9 +26,22 @@ exports.trackBus = async (req, res) => {
             } else if (!isNaN(mqtt_timestamp) && numTs > 1000000000) {
                 parsedMqttTimestamp = new Date(numTs * 1000).toISOString();
             } else {
-                const d = new Date(mqtt_timestamp);
-                if (!isNaN(d.getTime())) {
-                    parsedMqttTimestamp = d.toISOString();
+                let tsStr = String(mqtt_timestamp).trim();
+                // If it is a string date and doesn't specify any timezone offset (like Z, +07:00, -05:00)
+                if (typeof mqtt_timestamp === 'string' && !tsStr.includes('Z') && !/\+\d{2}:?\d{2}$/.test(tsStr) && !/-\d{2}:?\d{2}$/.test(tsStr)) {
+                    let formattedStr = tsStr.replace(' ', 'T');
+                    if (!formattedStr.includes('T')) {
+                        const d = new Date(tsStr);
+                        if (!isNaN(d.getTime())) parsedMqttTimestamp = d.toISOString();
+                    } else {
+                        const d = new Date(formattedStr + '+07:00'); // Treat as local time WIB (UTC+7)
+                        if (!isNaN(d.getTime())) parsedMqttTimestamp = d.toISOString();
+                    }
+                } else {
+                    const d = new Date(mqtt_timestamp);
+                    if (!isNaN(d.getTime())) {
+                        parsedMqttTimestamp = d.toISOString();
+                    }
                 }
             }
         }
