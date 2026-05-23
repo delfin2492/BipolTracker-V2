@@ -1455,55 +1455,89 @@
         }
 
         function exportToCSV() {
-            if (!allLogs.length) {
+            const select = document.getElementById('analyticsBusFilter');
+            const selectedBusId = select ? select.value : 'all';
+
+            let filtered = allLogs;
+            if (selectedBusId !== 'all') {
+                filtered = allLogs.filter(log => (log.bus_id || '').toLowerCase() === selectedBusId.toLowerCase());
+            }
+
+            if (!filtered.length) {
                 Swal.fire({ icon: 'warning', title: 'No Data', text: 'No data to export' });
                 return;
             }
 
-            const headers = ['Bus ID', 'Latitude', 'Longitude', 'Speed', 'Gas Level', 'CO2 (PPM)', 'RSSI (dBm)', 'Time'];
-            const rows = allLogs.map(log => [
-                log.bus_id,
-                log.latitude,
-                log.longitude,
-                log.speed,
-                log.gas_level,
-                log.co2 || 0,
-                log.rssi || 0,
-                new Date(log.created_at).toLocaleString()
-            ]);
+            const headers = ['Bus ID', 'Latitude', 'Longitude', 'Speed (km/h)', 'Gas Level', 'CO2 (PPM)', 'RSSI (dBm)', 'Bipoltrack Time', 'Server Time', 'Latency'];
+            const rows = filtered.map(log => {
+                const mqttTime = log.mqtt_timestamp ? formatTimestamp(log.mqtt_timestamp) : '-';
+                const serverTime = log.created_at ? formatTimestamp(log.created_at) : '-';
+                
+                let latencyStr = '-';
+                if (log.mqtt_timestamp && log.created_at) {
+                    const tMqtt = new Date(log.mqtt_timestamp).getTime();
+                    const tServer = new Date(log.created_at).getTime();
+                    const diff = tServer - tMqtt;
+                    latencyStr = `${diff} ms`;
+                }
 
-            const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
+                return [
+                    log.bus_id || 'Unknown',
+                    log.latitude ? log.latitude.toFixed(6) : 0,
+                    log.longitude ? log.longitude.toFixed(6) : 0,
+                    log.speed || 0,
+                    log.gas_level || 0,
+                    log.co2 || 0,
+                    log.rssi || 0,
+                    mqttTime,
+                    serverTime,
+                    latencyStr
+                ];
+            });
+
+            const csvContent = [headers, ...rows].map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',')).join('\n');
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `bipol_logs_${new Date().toISOString().split('T')[0]}.csv`;
+            const fileSuffix = selectedBusId === 'all' ? 'all' : selectedBusId.toLowerCase();
+            link.download = `bipol_logs_${fileSuffix}_${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
 
             Swal.fire({ icon: 'success', title: 'Exported!', text: 'CSV file downloaded', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
         }
 
         function exportToPDF() {
-            if (!allLogs.length) {
+            const select = document.getElementById('analyticsBusFilter');
+            const selectedBusId = select ? select.value : 'all';
+
+            let filtered = allLogs;
+            if (selectedBusId !== 'all') {
+                filtered = allLogs.filter(log => (log.bus_id || '').toLowerCase() === selectedBusId.toLowerCase());
+            }
+
+            if (!filtered.length) {
                 Swal.fire({ icon: 'warning', title: 'No Data', text: 'No data to export' });
                 return;
             }
 
             var printWindow = window.open('', '_blank');
-            var avgSpeed = (allLogs.reduce(function (sum, log) { return sum + (log.speed || 0); }, 0) / allLogs.length).toFixed(1);
-            var maxGas = Math.max.apply(null, allLogs.map(function (log) { return log.gas_level || 0; }));
+            var avgSpeed = (filtered.reduce(function (sum, log) { return sum + (log.speed || 0); }, 0) / filtered.length).toFixed(1);
+            var maxGas = Math.max.apply(null, filtered.map(function (log) { return log.gas_level || 0; }));
 
-            var avgCo2 = (allLogs.reduce(function (sum, log) { return sum + (log.co2 || 0); }, 0) / allLogs.length).toFixed(0);
-            var avgRssi = (allLogs.reduce(function (sum, log) { return sum + (log.rssi || 0); }, 0) / allLogs.length).toFixed(0);
+            var avgCo2 = (filtered.reduce(function (sum, log) { return sum + (log.co2 || 0); }, 0) / filtered.length).toFixed(0);
+            var avgRssi = (filtered.reduce(function (sum, log) { return sum + (log.rssi || 0); }, 0) / filtered.length).toFixed(0);
+
+            var busTitleSuffix = selectedBusId === 'all' ? 'All Buses' : selectedBusId;
 
             var html = '<!DOCTYPE html><html><head>';
-            html += '<title>Bipol Report - ' + new Date().toLocaleDateString() + '</title>';
+            html += '<title>Bipol Report - ' + busTitleSuffix + ' - ' + new Date().toLocaleDateString() + '</title>';
             html += '<style>body{font-family:Arial,sans-serif;padding:20px}h1{color:#BF1E2E}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f4f4f4}.summary{display:flex;flex-wrap:wrap;gap:15px;margin:20px 0}.summary-item{background:#f8f8f8;padding:15px;border-radius:8px;min-width:150px;}</style>';
             html += '</head><body>';
-            html += '<h1>Bipol Fleet Report</h1>';
+            html += '<h1>Bipol Fleet Report (' + busTitleSuffix + ')</h1>';
             html += '<p>Generated: ' + new Date().toLocaleString() + '</p>';
             html += '<div class="summary">';
-            html += '<div class="summary-item"><strong>Total Entries:</strong> ' + allLogs.length + '</div>';
+            html += '<div class="summary-item"><strong>Total Entries:</strong> ' + filtered.length + '</div>';
             html += '<div class="summary-item"><strong>Avg Speed:</strong> ' + avgSpeed + ' km/h</div>';
             html += '<div class="summary-item"><strong>Max Gas:</strong> ' + maxGas + '</div>';
             html += '<div class="summary-item"><strong>Avg CO2:</strong> ' + avgCo2 + ' PPM</div>';
@@ -1511,7 +1545,7 @@
             html += '</div>';
             html += '<table><thead><tr><th>Bus ID</th><th>Coordinates</th><th>Speed</th><th>Gas</th><th>CO2</th><th>RSSI</th><th>Bipoltrack Time</th><th>Server Time</th><th>Latency</th></tr></thead><tbody>';
 
-            allLogs.slice(0, 50).forEach(function (log) {
+            filtered.slice(0, 50).forEach(function (log) {
                 var mqttTime = log.mqtt_timestamp ? formatTimestamp(log.mqtt_timestamp) : '-';
                 var serverTime = log.created_at ? formatTimestamp(log.created_at) : '-';
                 
@@ -1524,10 +1558,10 @@
                 }
 
                 html += '<tr>';
-                html += '<td>' + log.bus_id + '</td>';
+                html += '<td>' + (log.bus_id || 'Unknown') + '</td>';
                 html += '<td>' + (log.latitude ? log.latitude.toFixed(6) : 0) + ', ' + (log.longitude ? log.longitude.toFixed(6) : 0) + '</td>';
-                html += '<td>' + log.speed + ' km/h</td>';
-                html += '<td>' + log.gas_level + '</td>';
+                html += '<td>' + (log.speed || 0) + ' km/h</td>';
+                html += '<td>' + (log.gas_level || 0) + '</td>';
                 html += '<td>' + (log.co2 || 0) + '</td>';
                 html += '<td>' + (log.rssi || 0) + '</td>';
                 html += '<td>' + mqttTime + '</td>';
