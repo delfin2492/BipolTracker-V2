@@ -10,28 +10,44 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="/images/pwa-icon-192.png">
     <link rel="manifest" href="/manifest.json">
-    <title>Bipol Tracker</title>
+
+    <!-- SEO & Meta Tags -->
+    <title>Bipol Tracker - Pelacak Bus PNJ Real-Time</title>
+    <meta name="description"
+        content="Pantau posisi bus kampus PNJ (Bipol) secara real-time. Cek jadwal, rute pagi/sore, dan estimasi kedatangan armada. Solusi transportasi cerdas untuk mahasiswa PNJ.">
+    <meta name="keywords"
+        content="Bipol Tracker, Bus PNJ, Pelacak Bus, Jadwal Bus PNJ, Transportasi PNJ, Politeknik Negeri Jakarta, Real-time Bus Tracking">
+    <meta name="author" content="Bipol Team">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.bipoltracker.cloud/">
+    <meta property="og:title" content="Bipol Tracker - Pelacak Bus PNJ Real-Time">
+    <meta property="og:description"
+        content="Pantau posisi bus kampus PNJ (Bipol) secara real-time. Cek jadwal, rute pagi/sore, dan estimasi kedatangan armada.">
+    <meta property="og:image" content="https://www.bipoltracker.cloud/images/header.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.bipoltracker.cloud/">
+    <meta property="twitter:title" content="Bipol Tracker - Pelacak Bus PNJ Real-Time">
+    <meta property="twitter:description"
+        content="Pantau posisi bus kampus PNJ (Bipol) secara real-time. Cek jadwal, rute pagi/sore, dan estimasi kedatangan armada.">
+    <meta property="twitter:image" content="https://www.bipoltracker.cloud/images/header.png">
+
     <link rel="icon" href="/images/favicon.png" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script type="module" crossorigin src="/assets/main-CgTgPXST.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/main-CLQw8_4L.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script type="module" crossorigin src="/assets/main-DiXVrsrs.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/main-BMXJpeJU.css">
 </head>
 
 <body>
-    <div id="loading-screen" class="loading-screen">
-        <div class="loading-content">
-            <img src="/images/loading-banner.png" alt="Bipol" class="loading-logo">
-            <h2 class="loading-title">Bipol Tracker</h2>
-            <div class="loading-spinner">
-                <div class="spinner-ring"></div>
-            </div>
-            <p class="loading-text">Memuat peta...</p>
-        </div>
-    </div>
 
     <div id="arrival-notification-container" class="arrival-notification-container"></div>
 
@@ -342,7 +358,7 @@
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://unpkg.com/@turf/turf/turf.min.js"></script>
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
 
     <div id="image-modal" class="image-modal" onclick="closeImage()">
         <span class="close-modal">&times;</span><img class="modal-content" id="img01">
@@ -567,46 +583,39 @@
             document.getElementById('offline-indicator').classList.add('show');
         }
     </script>
-    <script>
-        // Android App Promo Popup
-        document.addEventListener('DOMContentLoaded', () => {
-            // Check if already shown in this session
-            if (!sessionStorage.getItem('appPromoShown')) {
-                setTimeout(() => {
-                    Swal.fire({
-                        title: '<strong>BIPOL Mobile Tersedia!</strong>',
-                        html: `
-                            <div style="text-align:center;">
-                                <img src="/images/pwa-icon-192.png" style="width:80px; margin-bottom:15px; border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.1);">
-                                <p style="font-size:1.1rem; color:#475569; margin-bottom:20px;">
-                                    Akses pelacakan bus lebih cepat dan stabil langsung dari HP Android Anda.
-                                </p>
-                                <a href="/apk/app-debug.apk" class="swal2-confirm swal2-styled" 
-                                   style="display:inline-block; background-color:#10b981; text-decoration:none; padding:12px 24px; font-size:1.1rem; border-radius:8px; width:100%; box-sizing:border-box; margin-bottom:10px;">
-                                    <i class="fa-brands fa-android"></i> Download App (APK)
-                                </a>
-                                <p style="font-size:0.9rem; color:#94a3b8; margin-top:10px;">
-                                    Versi 1.0 (Beta) • Gratis
-                                </p>
-                            </div>
-                        `,
-                        showCloseButton: true,
-                        showCancelButton: true,
-                        focusConfirm: false,
-                        confirmButtonText: '<i class="fa-solid fa-thumbs-up"></i> Download Sekarang',
-                        confirmButtonColor: '#10b981',
-                        cancelButtonText: 'Nanti Saja',
-                        cancelButtonColor: '#64748b',
-                        showConfirmButton: false, // Hidden because we use custom link button inside HTML
-                        backdrop: `rgba(0,0,0,0.4)`
-                    });
-                    
-                    // Mark as shown
-                    sessionStorage.setItem('appPromoShown', 'true');
-                }, 1500); // Delay 1.5s for smooth entry
-            }
-        });
-    </script>
+    <div id="bus-detail-sheet" class="bus-detail-sheet">
+        <div class="sheet-header detail-header">
+            <h2 id="detail-bus-name">SIM-UI-01</h2>
+            <button class="fab-btn close-detail-btn" onclick="closeBusDetailSheet()"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div class="detail-stats-grid">
+            <div class="detail-stat">
+                <i class="fa-solid fa-gauge" style="color: #0ea5e9;"></i>
+                <div class="stat-value" id="detail-speed">0</div>
+                <div class="stat-label">km/h</div>
+            </div>
+            <div class="detail-stat">
+                <i class="fa-solid fa-fire" style="color: #f59e0b;"></i>
+                <div class="stat-value" id="detail-gas">0</div>
+                <div class="stat-label">Gas</div>
+            </div>
+            <div class="detail-stat">
+                <i class="fa-solid fa-cloud" style="color: #10b981;"></i>
+                <div class="stat-value" id="detail-co2">0</div>
+                <div class="stat-label">PPM</div>
+            </div>
+        </div>
+        
+        <div class="detail-chart-container">
+            <div class="chart-tabs">
+                <button class="chart-tab active" onclick="switchChartTab('co2', this)">CO2</button>
+                <button class="chart-tab" onclick="switchChartTab('gas', this)">Gas</button>
+                <button class="chart-tab" onclick="switchChartTab('speed', this)">Speed</button>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="busDetailChart"></canvas>
+            </div>
+        </div>
+    </div>
 </body>
-
 </html>

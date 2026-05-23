@@ -1,6 +1,7 @@
 import { stops, bounds } from './data.js';
 import { getMap, setFollowBusId, getFollowBusId, toggleRoute, closeAllPopups, getMapPadding } from './map.js';
 import { getBusStatus, updateStatusConfig, GAS_ALERT_THRESHOLD, CO2_ALERT_THRESHOLD } from './status.js';
+import { formatTimestamp } from './utils.js';
 import * as turf from 'https://cdn.jsdelivr.net/npm/@turf/turf@7/+esm';
 
 let lastAlert = 0;
@@ -95,6 +96,7 @@ export function updateSidebar(bus, list, index) {
     const co2Class = (bus.co2 !== undefined && bus.co2 > CO2_ALERT_THRESHOLD) ? 'text-danger' : '';
     const eta = calculateETA(bus);
 
+    const timeStr = formatTimestamp(bus.created_at);
     item.innerHTML = `
         <div class="bus-icon-wrapper"><img src="./images/bipol.png"></div>
         <div class="bus-info">
@@ -102,10 +104,11 @@ export function updateSidebar(bus, list, index) {
             <p style="margin-bottom: 2px;"><span><i class="fa-solid ${busStatus.icon}"></i> ${busStatus.status}</span> &bull;
             <span><i class="fa-solid fa-gauge"></i> ${bus.speed} km/h</span> &bull;
             <span class="${gasClass}"><i class="fa-solid fa-fire"></i> ${bus.gas_level}</span></p>
-            <p style="opacity: 0.8; font-size: 0.85em;">
+            <p style="opacity: 0.8; font-size: 0.85em; margin-bottom: 2px;">
                 <span class="${co2Class}"><i class="fa-solid fa-cloud"></i> ${bus.co2 !== undefined ? bus.co2 : 0} PPM</span> &bull;
                 <span><i class="fa-solid fa-wifi"></i> ${bus.rssi !== undefined ? bus.rssi : 0} dBm</span>
             </p>
+            ${timeStr ? `<p style="opacity: 0.6; font-size: 0.75em; margin-top: 2px;"><i class="fa-regular fa-clock"></i> ${timeStr}</p>` : ''}
         </div>`;
     item.onclick = () => {
         if (getFollowBusId() === bus.bus_id) return;

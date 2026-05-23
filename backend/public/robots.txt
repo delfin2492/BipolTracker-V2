@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /login
+Disallow: /driver/dashboard
+Disallow: /api/
+
+Sitemap: https://www.bipoltracker.cloud/sitemap.xml

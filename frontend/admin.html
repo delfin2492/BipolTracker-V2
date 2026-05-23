@@ -831,7 +831,7 @@
 
                 tr.innerHTML = `
                     <td style="font-weight:700;">${log.bus_id || 'Unknown'}</td>
-                    <td class="data-highlight" style="font-size:0.85rem">${(log.latitude || 0).toFixed(5)}, ${(log.longitude || 0).toFixed(5)}</td>
+                    <td class="data-highlight" style="font-size:0.85rem">${(log.latitude || 0).toFixed(6)}, ${(log.longitude || 0).toFixed(6)}</td>
                     <td>${log.speed || 0} km/h</td>
                     <td class="data-highlight">${log.gas_level || 0}</td>
                     <td class="data-highlight">${log.co2 || 0} PPM</td>
@@ -1366,7 +1366,7 @@
             allLogs.slice(0, 50).forEach(function (log) {
                 html += '<tr>';
                 html += '<td>' + log.bus_id + '</td>';
-                html += '<td>' + (log.latitude ? log.latitude.toFixed(5) : 0) + ', ' + (log.longitude ? log.longitude.toFixed(5) : 0) + '</td>';
+                html += '<td>' + (log.latitude ? log.latitude.toFixed(6) : 0) + ', ' + (log.longitude ? log.longitude.toFixed(6) : 0) + '</td>';
                 html += '<td>' + log.speed + ' km/h</td>';
                 html += '<td>' + log.gas_level + '</td>';
                 html += '<td>' + (log.co2 || 0) + '</td>';
