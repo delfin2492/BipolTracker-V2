@@ -123,15 +123,20 @@
         </div>
 
         <div id="analytics-section" class="section-container">
-            <div class="analytics-header">
+            <div class="analytics-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                 <h2 style="font-size:1.2rem; margin:0;">Fleet Analytics</h2>
-                <div class="export-buttons">
-                    <button onclick="exportToCSV()" class="btn-export">
-                        <i class="fa-solid fa-file-csv"></i> Export CSV
-                    </button>
-                    <button onclick="exportToPDF()" class="btn-export">
-                        <i class="fa-solid fa-file-pdf"></i> Export PDF
-                    </button>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <select id="analyticsBusFilter" class="styled-input" style="width: 180px; margin-bottom: 0;" onchange="updateAnalyticsCards()">
+                        <option value="all">All Buses</option>
+                    </select>
+                    <div class="export-buttons">
+                        <button onclick="exportToCSV()" class="btn-export">
+                            <i class="fa-solid fa-file-csv"></i> Export CSV
+                        </button>
+                        <button onclick="exportToPDF()" class="btn-export">
+                            <i class="fa-solid fa-file-pdf"></i> Export PDF
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -246,7 +251,7 @@
                             <th>Gas</th>
                             <th>CO2</th>
                             <th>RSSI</th>
-                            <th>MQTT Time</th>
+                            <th>Bipoltrack Time</th>
                             <th>Server Time</th>
                             <th>Latency</th>
                         </tr>
@@ -769,6 +774,7 @@
                 if (log.bus_id) updateActiveBuses(log.bus_id);
             });
 
+            populateAnalyticsBusFilter();
             renderLogs();
         }
 
@@ -941,6 +947,10 @@
             if (allLogs.length > 200) allLogs.pop();
             updateActiveBuses(data.bus_id);
             renderLogs();
+            populateAnalyticsBusFilter();
+            if (document.getElementById('nav-analytics').classList.contains('active')) {
+                initCharts();
+            }
         });
         socket.on('geofence_event', (data) => {
             addGeofenceRow(data);
@@ -1177,93 +1187,167 @@
             });
         }
 
-        let speedChart, gasChart, activityChart;
-        let chartsInitialized = false;
+        let speedChartInstance = null;
+        let co2ChartInstance = null;
+        let rssiChartInstance = null;
+        let gasChartInstance = null;
+        let activityChartInstance = null;
 
-        function initCharts() {
-            if (chartsInitialized || !allLogs.length) return;
-            chartsInitialized = true;
+        function populateAnalyticsBusFilter() {
+            const select = document.getElementById('analyticsBusFilter');
+            if (!select) return;
+            const currentValue = select.value;
+            
+            select.innerHTML = '<option value="all">All Buses</option>';
+            const uniqueBuses = [...new Set(allLogs.map(log => log.bus_id).filter(Boolean))];
+            uniqueBuses.sort().forEach(busId => {
+                const opt = document.createElement('option');
+                opt.value = busId;
+                opt.textContent = busId;
+                select.appendChild(opt);
+            });
+            
+            if (uniqueBuses.includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
 
-            const avgSpeed = allLogs.reduce((sum, log) => sum + (log.speed || 0), 0) / allLogs.length;
-            const maxGas = Math.max(...allLogs.map(log => log.gas_level || 0));
-            const uniqueHours = new Set(allLogs.map(log => new Date(log.created_at).getHours())).size;
-            const avgCo2 = allLogs.reduce((sum, log) => sum + (log.co2 || 0), 0) / allLogs.length;
-            const avgRssi = allLogs.reduce((sum, log) => sum + (log.rssi || 0), 0) / allLogs.length;
+        function updateAnalyticsCards() {
+            if (!allLogs.length) return;
+            const select = document.getElementById('analyticsBusFilter');
+            const selectedBusId = select ? select.value : 'all';
+            
+            let filtered = allLogs;
+            if (selectedBusId !== 'all') {
+                filtered = allLogs.filter(log => (log.bus_id || '').toLowerCase() === selectedBusId.toLowerCase());
+            }
+            
+            if (!filtered.length) {
+                document.getElementById('avgSpeed').textContent = '0 km/h';
+                document.getElementById('maxGas').textContent = '0';
+                document.getElementById('avgCo2').textContent = '0 PPM';
+                document.getElementById('avgRssi').textContent = '0 dBm';
+                document.getElementById('activeHours').textContent = '0h';
+                document.getElementById('totalEntries').textContent = '0';
+                return;
+            }
+
+            const avgSpeed = filtered.reduce((sum, log) => sum + (log.speed || 0), 0) / filtered.length;
+            const maxGas = Math.max(...filtered.map(log => log.gas_level || 0));
+            const uniqueHours = new Set(filtered.map(log => new Date(log.created_at).getHours())).size;
+            const avgCo2 = filtered.reduce((sum, log) => sum + (log.co2 || 0), 0) / filtered.length;
+            const avgRssi = filtered.reduce((sum, log) => sum + (log.rssi || 0), 0) / filtered.length;
 
             document.getElementById('avgSpeed').textContent = avgSpeed.toFixed(1) + ' km/h';
             document.getElementById('maxGas').textContent = maxGas;
-            document.getElementById('activeHours').textContent = uniqueHours + 'h';
-            document.getElementById('totalEntries').textContent = allLogs.length;
             document.getElementById('avgCo2').textContent = avgCo2.toFixed(0) + ' PPM';
             document.getElementById('avgRssi').textContent = avgRssi.toFixed(0) + ' dBm';
+            document.getElementById('activeHours').textContent = uniqueHours + 'h';
+            document.getElementById('totalEntries').textContent = filtered.length;
+        }
+
+        function initCharts() {
+            if (!allLogs.length) return;
+
+            updateAnalyticsCards();
 
             const last20 = allLogs.slice(0, 20).reverse();
-            const speedLabels = last20.map(log => new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-            const speedData = last20.map(log => log.speed || 0);
+            const speedLabels = last20.map(log => new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
 
+            const activeBuses = [...new Set(last20.map(log => log.bus_id).filter(Boolean))];
+            const colors = ['#BF1E2E', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
+
+            // Speed Chart
+            const speedDatasets = activeBuses.map((busId, i) => {
+                const color = colors[i % colors.length];
+                const data = last20.map(log => log.bus_id === busId ? (log.speed || 0) : null);
+                return {
+                    label: busId,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: color + '1a',
+                    fill: false,
+                    tension: 0.4,
+                    spanGaps: true
+                };
+            });
+
+            if (speedChartInstance) speedChartInstance.destroy();
             const ctx1 = document.getElementById('speedChart').getContext('2d');
-            speedChart = new Chart(ctx1, {
+            speedChartInstance = new Chart(ctx1, {
                 type: 'line',
                 data: {
                     labels: speedLabels,
-                    datasets: [{
-                        label: 'Speed (km/h)',
-                        data: speedData,
-                        borderColor: '#BF1E2E',
-                        backgroundColor: 'rgba(191, 30, 46, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
+                    datasets: speedDatasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
+                    plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, font: { family: 'Outfit' } } } }
                 }
             });
 
-            const co2Data = last20.map(log => log.co2 || 0);
+            // CO2 Chart
+            const co2Datasets = activeBuses.map((busId, i) => {
+                const color = colors[i % colors.length];
+                const data = last20.map(log => log.bus_id === busId ? (log.co2 || 0) : null);
+                return {
+                    label: busId,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: color + '1a',
+                    fill: false,
+                    tension: 0.4,
+                    spanGaps: true
+                };
+            });
+
+            if (co2ChartInstance) co2ChartInstance.destroy();
             const ctxCo2 = document.getElementById('co2Chart').getContext('2d');
-            new Chart(ctxCo2, {
+            co2ChartInstance = new Chart(ctxCo2, {
                 type: 'line',
                 data: {
                     labels: speedLabels,
-                    datasets: [{
-                        label: 'CO2 (PPM)',
-                        data: co2Data,
-                        borderColor: '#64748b',
-                        backgroundColor: 'rgba(100, 116, 139, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
+                    datasets: co2Datasets
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, font: { family: 'Outfit' } } } }
                 }
             });
 
-            const rssiData = last20.map(log => log.rssi || 0);
+            // RSSI Chart
+            const rssiDatasets = activeBuses.map((busId, i) => {
+                const color = colors[i % colors.length];
+                const data = last20.map(log => log.bus_id === busId ? (log.rssi || 0) : null);
+                return {
+                    label: busId,
+                    data: data,
+                    borderColor: color,
+                    backgroundColor: color + '1a',
+                    fill: false,
+                    tension: 0.4,
+                    spanGaps: true
+                };
+            });
+
+            if (rssiChartInstance) rssiChartInstance.destroy();
             const ctxRssi = document.getElementById('rssiChart').getContext('2d');
-            new Chart(ctxRssi, {
+            rssiChartInstance = new Chart(ctxRssi, {
                 type: 'line',
                 data: {
                     labels: speedLabels,
-                    datasets: [{
-                        label: 'RSSI (dBm)',
-                        data: rssiData,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
+                    datasets: rssiDatasets
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, font: { family: 'Outfit' } } } }
                 }
             });
 
+            // Gas Chart (Bar Distribution)
             const gasRanges = { '0-200': 0, '200-400': 0, '400-600': 0, '600+': 0 };
             allLogs.forEach(log => {
                 const g = log.gas_level || 0;
@@ -1273,8 +1357,9 @@
                 else gasRanges['600+']++;
             });
 
+            if (gasChartInstance) gasChartInstance.destroy();
             const ctx2 = document.getElementById('gasChart').getContext('2d');
-            gasChart = new Chart(ctx2, {
+            gasChartInstance = new Chart(ctx2, {
                 type: 'bar',
                 data: {
                     labels: Object.keys(gasRanges),
@@ -1291,13 +1376,15 @@
                 }
             });
 
+            // Bus Activity Chart (Pie)
             const busActivity = {};
             allLogs.forEach(log => {
                 busActivity[log.bus_id] = (busActivity[log.bus_id] || 0) + 1;
             });
 
+            if (activityChartInstance) activityChartInstance.destroy();
             const ctx3 = document.getElementById('activityChart').getContext('2d');
-            activityChart = new Chart(ctx3, {
+            activityChartInstance = new Chart(ctx3, {
                 type: 'doughnut',
                 data: {
                     labels: Object.keys(busActivity),
@@ -1393,7 +1480,7 @@
             html += '<div class="summary-item"><strong>Avg CO2:</strong> ' + avgCo2 + ' PPM</div>';
             html += '<div class="summary-item"><strong>Avg RSSI:</strong> ' + avgRssi + ' dBm</div>';
             html += '</div>';
-            html += '<table><thead><tr><th>Bus ID</th><th>Coordinates</th><th>Speed</th><th>Gas</th><th>CO2</th><th>RSSI</th><th>MQTT Time</th><th>Server Time</th><th>Latency</th></tr></thead><tbody>';
+            html += '<table><thead><tr><th>Bus ID</th><th>Coordinates</th><th>Speed</th><th>Gas</th><th>CO2</th><th>RSSI</th><th>Bipoltrack Time</th><th>Server Time</th><th>Latency</th></tr></thead><tbody>';
 
             allLogs.slice(0, 50).forEach(function (log) {
                 var mqttTime = log.mqtt_timestamp ? formatTimestamp(log.mqtt_timestamp) : '-';
