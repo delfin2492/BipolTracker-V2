@@ -54,7 +54,7 @@ function startMqttClient(io) {
         logger.mqtt.raw(topic, rawMessage);
 
         try {
-            let bus_id, latitude, longitude, speed, gas_level, co2, rssi;
+            let bus_id, latitude, longitude, speed, gas_level, co2, rssi, mqtt_timestamp = null;
 
             if (rawMessage.startsWith('{')) {
                 const data = JSON.parse(rawMessage);
@@ -65,6 +65,7 @@ function startMqttClient(io) {
                 gas_level = parseInt(data.gas);
                 co2 = parseInt(data.co2) || 0;
                 rssi = parseInt(data.rssi) || 0;
+                mqtt_timestamp = data.timestamp || data.mqtt_timestamp || data.gps_time || data.time || null;
             } else {
                 const parts = rawMessage.split(',');
                 if (parts.length < 5) return;
@@ -76,11 +77,28 @@ function startMqttClient(io) {
                 gas_level = parseInt(parts[4]);
                 co2 = parts.length > 5 ? parseInt(parts[5]) || 0 : 0;
                 rssi = parts.length > 6 ? parseInt(parts[6]) || 0 : 0;
+                mqtt_timestamp = parts.length > 7 ? parts[7] : null;
             }
 
             if (!bus_id || !validate.coordinate(latitude) || !validate.coordinate(longitude)) {
                 logger.mqtt.raw(topic, `Validation Failed! bus_id: ${bus_id}, lat: ${latitude}, lng: ${longitude}`);
                 return;
+            }
+
+            // Parse and validate mqtt_timestamp
+            let parsedMqttTimestamp = null;
+            if (mqtt_timestamp) {
+                const numTs = Number(mqtt_timestamp);
+                if (!isNaN(mqtt_timestamp) && numTs > 1000000000000) { // Unix milliseconds
+                    parsedMqttTimestamp = new Date(numTs).toISOString();
+                } else if (!isNaN(mqtt_timestamp) && numTs > 1000000000) { // Unix seconds
+                    parsedMqttTimestamp = new Date(numTs * 1000).toISOString();
+                } else {
+                    const d = new Date(mqtt_timestamp);
+                    if (!isNaN(d.getTime())) {
+                        parsedMqttTimestamp = d.toISOString();
+                    }
+                }
             }
 
             logger.mqtt.parsed(bus_id, latitude, longitude, speed, gas_level, co2, rssi);
@@ -95,6 +113,7 @@ function startMqttClient(io) {
                 gas_level: validate.gasLevel(gas_level) ? gas_level : 0,
                 co2: co2,
                 rssi: rssi,
+                mqtt_timestamp: parsedMqttTimestamp,
                 created_at: new Date().toISOString()
             };
 

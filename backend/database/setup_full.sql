@@ -36,6 +36,7 @@ CREATE TABLE "bipol_tracker" (
     "gas_level" INTEGER DEFAULT 0,
     "co2" INTEGER DEFAULT 0,
     "rssi" INTEGER DEFAULT 0,
+    "mqtt_timestamp" TIMESTAMPTZ,
     "created_at" TIMESTAMPTZ DEFAULT NOW()
 );
 

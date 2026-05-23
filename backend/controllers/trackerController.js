@@ -17,12 +17,29 @@ exports.trackBus = async (req, res) => {
             return res.status(400).send("Data invalid");
         }
 
+        const mqtt_timestamp = req.body.timestamp || req.body.mqtt_timestamp || null;
+        let parsedMqttTimestamp = null;
+        if (mqtt_timestamp) {
+            const numTs = Number(mqtt_timestamp);
+            if (!isNaN(mqtt_timestamp) && numTs > 1000000000000) {
+                parsedMqttTimestamp = new Date(numTs).toISOString();
+            } else if (!isNaN(mqtt_timestamp) && numTs > 1000000000) {
+                parsedMqttTimestamp = new Date(numTs * 1000).toISOString();
+            } else {
+                const d = new Date(mqtt_timestamp);
+                if (!isNaN(d.getTime())) {
+                    parsedMqttTimestamp = d.toISOString();
+                }
+            }
+        }
+
         const insertData = {
             bus_id,
             latitude,
             longitude,
             speed: validate.speed(speed) ? speed : 0,
             gas_level: validate.gasLevel(gas_level) ? gas_level : 0,
+            mqtt_timestamp: parsedMqttTimestamp,
             created_at: new Date().toISOString()
         };
 

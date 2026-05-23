@@ -246,7 +246,9 @@
                             <th>Gas</th>
                             <th>CO2</th>
                             <th>RSSI</th>
-                            <th>Time</th>
+                            <th>MQTT Time</th>
+                            <th>Server Time</th>
+                            <th>Latency</th>
                         </tr>
                     </thead>
                     <tbody id="logs-table-body"></tbody>
@@ -770,6 +772,25 @@
             renderLogs();
         }
 
+        function formatTimestamp(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                const d = new Date(dateStr);
+                if (isNaN(d.getTime())) return '-';
+                const pad = (n, len = 2) => String(n).padStart(len, '0');
+                const yyyy = d.getFullYear();
+                const mm = pad(d.getMonth() + 1);
+                const dd = pad(d.getDate());
+                const hh = pad(d.getHours());
+                const min = pad(d.getMinutes());
+                const ss = pad(d.getSeconds());
+                const ms = pad(d.getMilliseconds(), 3);
+                return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}.${ms}`;
+            } catch (e) {
+                return '-';
+            }
+        }
+
         function renderLogs() {
             const tbody = document.getElementById('logs-table-body');
             tbody.innerHTML = '';
@@ -813,7 +834,7 @@
             if (filtered.length === 0) {
                 tbody.innerHTML = `
                     <tr class="empty-row">
-                        <td colspan="5">
+                        <td colspan="9">
                             <div class="empty-state">
                                 <i class="fa-solid fa-database"></i>
                                 <div class="empty-state-text">Belum ada data log</div>
@@ -827,7 +848,16 @@
 
             filtered.slice(0, 50).forEach(log => {
                 const tr = document.createElement('tr');
-                const time = log.created_at ? new Date(log.created_at).toLocaleTimeString() : new Date().toLocaleTimeString();
+                const mqttTime = log.mqtt_timestamp ? formatTimestamp(log.mqtt_timestamp) : '-';
+                const serverTime = log.created_at ? formatTimestamp(log.created_at) : '-';
+                
+                let latencyStr = '-';
+                if (log.mqtt_timestamp && log.created_at) {
+                    const tMqtt = new Date(log.mqtt_timestamp).getTime();
+                    const tServer = new Date(log.created_at).getTime();
+                    const diff = tServer - tMqtt;
+                    latencyStr = `${diff} ms`;
+                }
 
                 tr.innerHTML = `
                     <td style="font-weight:700;">${log.bus_id || 'Unknown'}</td>
@@ -836,7 +866,9 @@
                     <td class="data-highlight">${log.gas_level || 0}</td>
                     <td class="data-highlight">${log.co2 || 0} PPM</td>
                     <td class="data-highlight">${log.rssi || 0} dBm</td>
-                    <td style="color:var(--text-light); font-size:0.85rem">${time}</td>
+                    <td style="color:var(--text-light); font-size:0.85rem">${mqttTime}</td>
+                    <td style="color:var(--text-light); font-size:0.85rem">${serverTime}</td>
+                    <td class="data-highlight" style="font-weight:600;">${latencyStr}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -1361,9 +1393,20 @@
             html += '<div class="summary-item"><strong>Avg CO2:</strong> ' + avgCo2 + ' PPM</div>';
             html += '<div class="summary-item"><strong>Avg RSSI:</strong> ' + avgRssi + ' dBm</div>';
             html += '</div>';
-            html += '<table><thead><tr><th>Bus ID</th><th>Coordinates</th><th>Speed</th><th>Gas</th><th>CO2</th><th>RSSI</th><th>Time</th></tr></thead><tbody>';
+            html += '<table><thead><tr><th>Bus ID</th><th>Coordinates</th><th>Speed</th><th>Gas</th><th>CO2</th><th>RSSI</th><th>MQTT Time</th><th>Server Time</th><th>Latency</th></tr></thead><tbody>';
 
             allLogs.slice(0, 50).forEach(function (log) {
+                var mqttTime = log.mqtt_timestamp ? formatTimestamp(log.mqtt_timestamp) : '-';
+                var serverTime = log.created_at ? formatTimestamp(log.created_at) : '-';
+                
+                var latencyStr = '-';
+                if (log.mqtt_timestamp && log.created_at) {
+                    var tMqtt = new Date(log.mqtt_timestamp).getTime();
+                    var tServer = new Date(log.created_at).getTime();
+                    var diff = tServer - tMqtt;
+                    latencyStr = diff + ' ms';
+                }
+
                 html += '<tr>';
                 html += '<td>' + log.bus_id + '</td>';
                 html += '<td>' + (log.latitude ? log.latitude.toFixed(6) : 0) + ', ' + (log.longitude ? log.longitude.toFixed(6) : 0) + '</td>';
@@ -1371,7 +1414,9 @@
                 html += '<td>' + log.gas_level + '</td>';
                 html += '<td>' + (log.co2 || 0) + '</td>';
                 html += '<td>' + (log.rssi || 0) + '</td>';
-                html += '<td>' + new Date(log.created_at).toLocaleString() + '</td>';
+                html += '<td>' + mqttTime + '</td>';
+                html += '<td>' + serverTime + '</td>';
+                html += '<td>' + latencyStr + '</td>';
                 html += '</tr>';
             });
 
