@@ -1347,14 +1347,32 @@
                 }
             });
 
-            // Gas Chart (Bar Distribution)
-            const gasRanges = { '0-200': 0, '200-400': 0, '400-600': 0, '600+': 0 };
-            allLogs.forEach(log => {
-                const g = log.gas_level || 0;
-                if (g < 200) gasRanges['0-200']++;
-                else if (g < 400) gasRanges['200-400']++;
-                else if (g < 600) gasRanges['400-600']++;
-                else gasRanges['600+']++;
+            // Gas Chart (Bar Distribution by Bus)
+            const uniqueActiveBuses = [...new Set(allLogs.map(log => log.bus_id).filter(Boolean))];
+            const gasColors = ['#BF1E2E', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
+            
+            const gasDatasets = uniqueActiveBuses.map((busId, i) => {
+                const color = gasColors[i % gasColors.length];
+                const counts = [0, 0, 0, 0]; // 0-200, 200-400, 400-600, 600+
+                
+                allLogs.forEach(log => {
+                    if (log.bus_id === busId) {
+                        const g = log.gas_level || 0;
+                        if (g < 200) counts[0]++;
+                        else if (g < 400) counts[1]++;
+                        else if (g < 600) counts[2]++;
+                        else counts[3]++;
+                    }
+                });
+                
+                return {
+                    label: busId,
+                    data: counts,
+                    backgroundColor: color,
+                    borderColor: color,
+                    borderWidth: 1,
+                    borderRadius: 4
+                };
             });
 
             if (gasChartInstance) gasChartInstance.destroy();
@@ -1362,17 +1380,28 @@
             gasChartInstance = new Chart(ctx2, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(gasRanges),
-                    datasets: [{
-                        label: 'Count',
-                        data: Object.values(gasRanges),
-                        backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#ef4444']
-                    }]
+                    labels: ['0-200', '200-400', '400-600', '600+'],
+                    datasets: gasDatasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
+                    plugins: { 
+                        legend: { 
+                            display: true, 
+                            position: 'top', 
+                            labels: { boxWidth: 10, font: { family: 'Outfit' } } 
+                        } 
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        }
+                    }
                 }
             });
 
