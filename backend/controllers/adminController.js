@@ -9,17 +9,45 @@ const logger = require('../utils/logger');
 
 exports.getLogs = async (req, res) => {
     try {
-        const cached = getFromCache('admin_logs');
-        if (cached) return res.json(cached);
+        const { startDate, endDate } = req.query;
 
-        const { data, error } = await supabase
+        // Use cache only when there are no custom date filters active
+        if (!startDate && !endDate) {
+            const cached = getFromCache('admin_logs');
+            if (cached) return res.json(cached);
+        }
+
+        let query = supabase
             .from('bipol_tracker')
             .select('*')
-            .order('created_at', { ascending: false })
-            .limit(100);
+            .order('created_at', { ascending: false });
 
+        if (startDate) {
+            const parsedStart = new Date(startDate);
+            if (!isNaN(parsedStart.getTime())) {
+                query = query.gte('created_at', parsedStart.toISOString());
+            }
+        }
+        if (endDate) {
+            const parsedEnd = new Date(endDate);
+            if (!isNaN(parsedEnd.getTime())) {
+                query = query.lte('created_at', parsedEnd.toISOString());
+            }
+        }
+
+        // Limit data fetching to keep it highly performant:
+        // Default to 2000 rows (increased from 100) or up to 5000 rows when filtering
+        const limitVal = (startDate || endDate) ? 5000 : 2000;
+        query = query.limit(limitVal);
+
+        const { data, error } = await query;
         if (error) throw error;
-        setToCache('admin_logs', data);
+
+        // Store standard logs in cache
+        if (!startDate && !endDate) {
+            setToCache('admin_logs', data);
+        }
+
         res.json(data);
     } catch (err) {
         logger.error('Get logs error:', err.message);

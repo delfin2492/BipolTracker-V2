@@ -125,10 +125,15 @@
         <div id="analytics-section" class="section-container">
             <div class="analytics-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                 <h2 style="font-size:1.2rem; margin:0;">Fleet Analytics</h2>
-                <div style="display: flex; gap: 12px; align-items: center;">
-                    <select id="analyticsBusFilter" class="styled-input" style="width: 180px; margin-bottom: 0;" onchange="updateAnalyticsCards()">
+                <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                    <select id="analyticsBusFilter" class="styled-input" style="width: 150px; margin-bottom: 0;" onchange="updateAnalyticsCards(); initCharts();">
                         <option value="all">All Buses</option>
                     </select>
+                    <div class="date-range-container" style="display: flex; gap: 8px; align-items: center;">
+                        <input type="datetime-local" id="analyticsStartFilter" class="styled-input" style="width: 195px; margin-bottom: 0;" onchange="handleAnalyticsFilterChange()" title="Start Date-Time">
+                        <span style="color: var(--text-light); font-size: 0.85rem;">to</span>
+                        <input type="datetime-local" id="analyticsEndFilter" class="styled-input" style="width: 195px; margin-bottom: 0;" onchange="handleAnalyticsFilterChange()" title="End Date-Time">
+                    </div>
                     <div class="export-buttons">
                         <button onclick="exportToCSV()" class="btn-export">
                             <i class="fa-solid fa-file-csv"></i> Export CSV
@@ -227,8 +232,10 @@
                     <input type="text" id="filterBusId" class="styled-input" placeholder="Filter by Bus ID..."
                         onkeyup="renderLogs()">
                 </div>
-                <div class="input-wrapper" style="width: 180px;">
-                    <input type="date" id="filterDate" class="styled-input" onchange="renderLogs()">
+                <div class="input-wrapper" style="display: flex; gap: 8px; align-items: center; width: auto;">
+                    <input type="datetime-local" id="filterStartDate" class="styled-input" style="width: 195px; margin-bottom: 0;" onchange="handleLogsFilterChange()" title="Start Date-Time">
+                    <span style="color: var(--text-light); font-size: 0.85rem;">to</span>
+                    <input type="datetime-local" id="filterEndDate" class="styled-input" style="width: 195px; margin-bottom: 0;" onchange="handleLogsFilterChange()" title="End Date-Time">
                 </div>
                 <div class="input-wrapper" style="width: 200px;">
                     <select id="sortLogs" class="styled-input" onchange="renderLogs()">
@@ -766,16 +773,43 @@
 
         let allLogs = [];
 
-        async function loadLogs() {
-            const res = await fetch('/api/admin/logs');
-            allLogs = await res.json();
+        async function loadLogs(startDate = '', endDate = '') {
+            let url = '/api/admin/logs';
+            if (startDate || endDate) {
+                const params = new URLSearchParams();
+                if (startDate) params.append('startDate', startDate);
+                if (endDate) params.append('endDate', endDate);
+                url += '?' + params.toString();
+            }
 
-            allLogs.forEach(log => {
-                if (log.bus_id) updateActiveBuses(log.bus_id);
-            });
+            try {
+                const res = await fetch(url);
+                allLogs = await res.json();
 
-            populateAnalyticsBusFilter();
-            renderLogs();
+                allLogs.forEach(log => {
+                    if (log.bus_id) updateActiveBuses(log.bus_id);
+                });
+
+                populateAnalyticsBusFilter();
+                renderLogs();
+                if (document.getElementById('nav-analytics').classList.contains('active')) {
+                    initCharts();
+                }
+            } catch (e) {
+                console.error('Failed to load logs:', e);
+            }
+        }
+
+        async function handleAnalyticsFilterChange() {
+            const start = document.getElementById('analyticsStartFilter').value;
+            const end = document.getElementById('analyticsEndFilter').value;
+            await loadLogs(start, end);
+        }
+
+        async function handleLogsFilterChange() {
+            const start = document.getElementById('filterStartDate').value;
+            const end = document.getElementById('filterEndDate').value;
+            await loadLogs(start, end);
         }
 
         function formatTimestamp(dateStr) {
@@ -802,7 +836,8 @@
             tbody.innerHTML = '';
 
             const filterId = document.getElementById('filterBusId').value.toLowerCase();
-            const filterDate = document.getElementById('filterDate').value;
+            const startVal = document.getElementById('filterStartDate').value;
+            const endVal = document.getElementById('filterEndDate').value;
             const sortMode = document.getElementById('sortLogs').value;
 
             let filtered = allLogs.filter(log => {
@@ -810,9 +845,13 @@
                 const matchesId = bid.includes(filterId);
 
                 let matchesDate = true;
-                if (filterDate) {
-                    const logDate = log.created_at ? new Date(log.created_at).toISOString().split('T')[0] : '';
-                    matchesDate = logDate === filterDate;
+                if (startVal) {
+                    const startTime = new Date(startVal).getTime();
+                    matchesDate = matchesDate && (log.created_at && new Date(log.created_at).getTime() >= startTime);
+                }
+                if (endVal) {
+                    const endTime = new Date(endVal).getTime();
+                    matchesDate = matchesDate && (log.created_at && new Date(log.created_at).getTime() <= endTime);
                 }
 
                 return matchesId && matchesDate;
@@ -1216,10 +1255,22 @@
             if (!allLogs.length) return;
             const select = document.getElementById('analyticsBusFilter');
             const selectedBusId = select ? select.value : 'all';
+
+            const startVal = document.getElementById('analyticsStartFilter').value;
+            const endVal = document.getElementById('analyticsEndFilter').value;
             
             let filtered = allLogs;
             if (selectedBusId !== 'all') {
                 filtered = allLogs.filter(log => (log.bus_id || '').toLowerCase() === selectedBusId.toLowerCase());
+            }
+
+            if (startVal) {
+                const startTime = new Date(startVal).getTime();
+                filtered = filtered.filter(log => log.created_at && new Date(log.created_at).getTime() >= startTime);
+            }
+            if (endVal) {
+                const endTime = new Date(endVal).getTime();
+                filtered = filtered.filter(log => log.created_at && new Date(log.created_at).getTime() <= endTime);
             }
             
             if (!filtered.length) {
@@ -1251,7 +1302,20 @@
 
             updateAnalyticsCards();
 
-            const last20 = allLogs.slice(0, 20).reverse();
+            const startVal = document.getElementById('analyticsStartFilter').value;
+            const endVal = document.getElementById('analyticsEndFilter').value;
+
+            let filteredLogs = allLogs;
+            if (startVal) {
+                const startTime = new Date(startVal).getTime();
+                filteredLogs = filteredLogs.filter(log => log.created_at && new Date(log.created_at).getTime() >= startTime);
+            }
+            if (endVal) {
+                const endTime = new Date(endVal).getTime();
+                filteredLogs = filteredLogs.filter(log => log.created_at && new Date(log.created_at).getTime() <= endTime);
+            }
+
+            const last20 = filteredLogs.slice(0, 20).reverse();
             const speedLabels = last20.map(log => new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
 
             const activeBuses = [...new Set(last20.map(log => log.bus_id).filter(Boolean))];
@@ -1348,14 +1412,14 @@
             });
 
             // Gas Chart (Bar Distribution by Bus)
-            const uniqueActiveBuses = [...new Set(allLogs.map(log => log.bus_id).filter(Boolean))];
+            const uniqueActiveBuses = [...new Set(filteredLogs.map(log => log.bus_id).filter(Boolean))];
             const gasColors = ['#BF1E2E', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
             
             const gasDatasets = uniqueActiveBuses.map((busId, i) => {
                 const color = gasColors[i % gasColors.length];
                 const counts = [0, 0, 0, 0]; // 0-200, 200-400, 400-600, 600+
                 
-                allLogs.forEach(log => {
+                filteredLogs.forEach(log => {
                     if (log.bus_id === busId) {
                         const g = log.gas_level || 0;
                         if (g < 200) counts[0]++;
@@ -1407,7 +1471,7 @@
 
             // Bus Activity Chart (Pie)
             const busActivity = {};
-            allLogs.forEach(log => {
+            filteredLogs.forEach(log => {
                 busActivity[log.bus_id] = (busActivity[log.bus_id] || 0) + 1;
             });
 
@@ -1458,9 +1522,21 @@
             const select = document.getElementById('analyticsBusFilter');
             const selectedBusId = select ? select.value : 'all';
 
+            const startVal = document.getElementById('analyticsStartFilter').value;
+            const endVal = document.getElementById('analyticsEndFilter').value;
+
             let filtered = allLogs;
             if (selectedBusId !== 'all') {
                 filtered = allLogs.filter(log => (log.bus_id || '').toLowerCase() === selectedBusId.toLowerCase());
+            }
+
+            if (startVal) {
+                const startTime = new Date(startVal).getTime();
+                filtered = filtered.filter(log => log.created_at && new Date(log.created_at).getTime() >= startTime);
+            }
+            if (endVal) {
+                const endTime = new Date(endVal).getTime();
+                filtered = filtered.filter(log => log.created_at && new Date(log.created_at).getTime() <= endTime);
             }
 
             if (!filtered.length) {
@@ -1500,8 +1576,12 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            const fileSuffix = selectedBusId === 'all' ? 'all' : selectedBusId.toLowerCase();
-            link.download = `bipol_logs_${fileSuffix}_${new Date().toISOString().split('T')[0]}.csv`;
+            
+            let fileSuffix = selectedBusId === 'all' ? 'all' : selectedBusId.toLowerCase();
+            if (startVal) fileSuffix += `_from_${startVal.replace(/[:T]/g, '_')}`;
+            if (endVal) fileSuffix += `_to_${endVal.replace(/[:T]/g, '_')}`;
+            
+            link.download = `bipol_logs_${fileSuffix}.csv`;
             link.click();
 
             Swal.fire({ icon: 'success', title: 'Exported!', text: 'CSV file downloaded', toast: true, position: 'top-end', showConfirmButton: false, timer: 2000 });
@@ -1511,9 +1591,21 @@
             const select = document.getElementById('analyticsBusFilter');
             const selectedBusId = select ? select.value : 'all';
 
+            const startVal = document.getElementById('analyticsStartFilter').value;
+            const endVal = document.getElementById('analyticsEndFilter').value;
+
             let filtered = allLogs;
             if (selectedBusId !== 'all') {
                 filtered = allLogs.filter(log => (log.bus_id || '').toLowerCase() === selectedBusId.toLowerCase());
+            }
+
+            if (startVal) {
+                const startTime = new Date(startVal).getTime();
+                filtered = filtered.filter(log => log.created_at && new Date(log.created_at).getTime() >= startTime);
+            }
+            if (endVal) {
+                const endTime = new Date(endVal).getTime();
+                filtered = filtered.filter(log => log.created_at && new Date(log.created_at).getTime() <= endTime);
             }
 
             if (!filtered.length) {
@@ -1529,12 +1621,17 @@
             var avgRssi = (filtered.reduce(function (sum, log) { return sum + (log.rssi || 0); }, 0) / filtered.length).toFixed(0);
 
             var busTitleSuffix = selectedBusId === 'all' ? 'All Buses' : selectedBusId;
+            var rangeStr = 'All Time';
+            if (startVal || endVal) {
+                rangeStr = `${startVal ? startVal.replace('T', ' ') : 'Start'} to ${endVal ? endVal.replace('T', ' ') : 'End'}`;
+            }
 
             var html = '<!DOCTYPE html><html><head>';
             html += '<title>Bipol Report - ' + busTitleSuffix + ' - ' + new Date().toLocaleDateString() + '</title>';
             html += '<style>body{font-family:Arial,sans-serif;padding:20px}h1{color:#BF1E2E}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f4f4f4}.summary{display:flex;flex-wrap:wrap;gap:15px;margin:20px 0}.summary-item{background:#f8f8f8;padding:15px;border-radius:8px;min-width:150px;}</style>';
             html += '</head><body>';
             html += '<h1>Bipol Fleet Report (' + busTitleSuffix + ')</h1>';
+            html += '<p>Time Range: ' + rangeStr + '</p>';
             html += '<p>Generated: ' + new Date().toLocaleString() + '</p>';
             html += '<div class="summary">';
             html += '<div class="summary-item"><strong>Total Entries:</strong> ' + filtered.length + '</div>';
