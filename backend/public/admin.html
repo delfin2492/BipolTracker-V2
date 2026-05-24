@@ -817,14 +817,19 @@
             try {
                 const d = new Date(dateStr);
                 if (isNaN(d.getTime())) return '-';
+                
+                // Explicitly shift to WIB (UTC+7) time timezone offset
+                const wibTime = d.getTime() + (7 * 60 * 60 * 1000);
+                const wibDate = new Date(wibTime);
+                
                 const pad = (n, len = 2) => String(n).padStart(len, '0');
-                const yyyy = d.getFullYear();
-                const mm = pad(d.getMonth() + 1);
-                const dd = pad(d.getDate());
-                const hh = pad(d.getHours());
-                const min = pad(d.getMinutes());
-                const ss = pad(d.getSeconds());
-                const ms = pad(d.getMilliseconds(), 3);
+                const yyyy = wibDate.getUTCFullYear();
+                const mm = pad(wibDate.getUTCMonth() + 1);
+                const dd = pad(wibDate.getUTCDate());
+                const hh = pad(wibDate.getUTCHours());
+                const min = pad(wibDate.getUTCMinutes());
+                const ss = pad(wibDate.getUTCSeconds());
+                const ms = pad(wibDate.getUTCMilliseconds(), 3);
                 return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}.${ms}`;
             } catch (e) {
                 return '-';
