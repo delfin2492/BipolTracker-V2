@@ -455,6 +455,7 @@ export function updateMarker(bus) {
         const markerObj = busMarkers[bus.bus_id];
         markerObj.marker.setLngLat(targetPos);
         markerObj.marker.getPopup().setHTML(content);
+        markerObj.lastUpdated = Date.now(); // Store the last updated timestamp
         
         // Update the click handler with the latest bus object
         const el = markerObj.marker.getElement();
@@ -536,7 +537,8 @@ export function updateMarker(bus) {
             .addTo(map);
 
         busMarkers[bus.bus_id] = {
-            marker: marker
+            marker: marker,
+            lastUpdated: Date.now() // Store the last updated timestamp
         };
     }
 }
@@ -602,6 +604,38 @@ export function removeInactiveMarkers(activeIds) {
         if (!activeIds.has(id)) {
             busMarkers[id].marker.remove();
             delete busMarkers[id];
+        }
+    });
+}
+
+export function checkMarkerInactivity(timeoutMs = 3 * 60 * 1000) {
+    const now = Date.now();
+    Object.keys(busMarkers).forEach(id => {
+        const markerObj = busMarkers[id];
+        if (now - markerObj.lastUpdated > timeoutMs) {
+            // Remove marker from map
+            markerObj.marker.remove();
+            delete busMarkers[id];
+            
+            // Remove from sidebar list in UI
+            const el = document.getElementById(`bus-item-${id}`);
+            if (el) el.remove();
+            
+            // Update active bus count
+            const activeCount = Object.keys(busMarkers).length;
+            const summaryEl = document.getElementById('collapsed-summary');
+            if (summaryEl) {
+                summaryEl.innerHTML = `<i class="fa-solid fa-bus"></i> ${activeCount} Armada Aktif`;
+            }
+            
+            // Show empty state if no active buses left
+            if (activeCount === 0) {
+                const emptyState = document.getElementById('empty-state');
+                if (emptyState) {
+                    emptyState.style.display = 'flex';
+                    emptyState.classList.remove('hidden');
+                }
+            }
         }
     });
 }

@@ -1,5 +1,5 @@
 import './detailSheet.js';
-import { initMap, addRoutes, addStops, add3DBuildings, updateMarker, removeInactiveMarkers, getMap, setFollowBusId, getFollowBusId } from './map.js';
+import { initMap, addRoutes, addStops, add3DBuildings, updateMarker, removeInactiveMarkers, getMap, setFollowBusId, getFollowBusId, checkMarkerInactivity } from './map.js';
 import { setupControls, updateSidebar, calculateETA, checkAlerts, switchTab, closeImage } from './ui.js';
 import { updateStatusConfig, GAS_ALERT_THRESHOLD, CO2_ALERT_THRESHOLD, getBusStatus } from './status.js';
 import { formatTimestamp } from './utils.js';
@@ -228,7 +228,15 @@ async function fetchData() {
         });
 
         const activeIds = new Set();
+        const nowTime = Date.now();
+        const threeMinutes = 3 * 60 * 1000;
+
         data.forEach((bus, index) => {
+            const lastTime = new Date(bus.created_at || Date.now()).getTime();
+            if (nowTime - lastTime > threeMinutes) {
+                // Skip inactive bus on initial load
+                return;
+            }
             activeIds.add(bus.bus_id);
             updateMarker(bus);
             updateSidebar(bus, list, index);
@@ -252,6 +260,15 @@ async function fetchData() {
         }
 
         removeInactiveMarkers(activeIds);
+
+        // If there are no active buses left on load, show empty state
+        if (activeIds.size === 0) {
+            const emptyState = document.getElementById('empty-state');
+            if (emptyState) {
+                emptyState.style.display = 'flex';
+                emptyState.classList.remove('hidden');
+            }
+        }
 
     } catch (e) { }
 }
@@ -347,3 +364,10 @@ async function fetchInfo() {
 
 fetchData();
 fetchInfo();
+
+// Sweep away inactive markers every 10 seconds
+setInterval(() => {
+    try {
+        checkMarkerInactivity();
+    } catch (e) { }
+}, 10000);
