@@ -1,7 +1,22 @@
+import { getCOCategory, getCO2Category } from './status.js';
+
 let detailChart = null;
 let currentBusId = null;
 let rawLogData = [];
 let currentTab = 'co2';
+
+function updateCategoryDisplay(elementId, category) {
+    const el = document.getElementById(elementId);
+    if (!el) return;
+    el.innerText = category;
+    if (category === 'Rendah') {
+        el.style.color = '#10b981';
+    } else if (category === 'Sedang') {
+        el.style.color = '#f59e0b';
+    } else {
+        el.style.color = '#ef4444';
+    }
+}
 
 window.openBusDetailSheet = async function (bus) {
     console.log("Opening bottom sheet for:", bus.bus_id);
@@ -12,6 +27,9 @@ window.openBusDetailSheet = async function (bus) {
     document.getElementById('detail-speed').innerText = bus.speed;
     document.getElementById('detail-gas').innerText = bus.gas_level;
     document.getElementById('detail-co2').innerText = bus.co2 !== undefined ? bus.co2 : 0;
+    
+    updateCategoryDisplay('detail-co-category', getCOCategory(bus.gas_level));
+    updateCategoryDisplay('detail-co2-category', getCO2Category(bus.co2));
 
     // Show sheet
     document.getElementById('bus-detail-sheet').classList.add('active');
@@ -38,6 +56,9 @@ window.updateBusDetailSheet = function (bus) {
     document.getElementById('detail-speed').innerText = bus.speed;
     document.getElementById('detail-gas').innerText = bus.gas_level;
     document.getElementById('detail-co2').innerText = bus.co2 !== undefined ? bus.co2 : 0;
+
+    updateCategoryDisplay('detail-co-category', getCOCategory(bus.gas_level));
+    updateCategoryDisplay('detail-co2-category', getCO2Category(bus.co2));
 
     // Push new data to array if chart is open
     if (rawLogData && rawLogData.length > 0) {
