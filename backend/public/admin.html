@@ -331,7 +331,17 @@
                         <div class="input-wrapper">
                             <label>CO Alert Threshold</label>
                             <input type="number" id="gasThreshold" class="styled-input" placeholder="Loading..." min="0" max="10000">
-                            <small style="color:var(--text-light);">Alert ketika CO level melebihi nilai ini</small>
+                            <small style="color:var(--text-light);">Alert ketika CO level melebihi nilai ini (Tinggi)</small>
+                        </div>
+                        <div class="input-wrapper">
+                            <label>CO Medium Threshold</label>
+                            <input type="number" id="coMediumThreshold" class="styled-input" placeholder="Loading..." min="0" max="10000">
+                            <small style="color:var(--text-light);">Batas untuk kategori CO level Sedang</small>
+                        </div>
+                        <div class="input-wrapper">
+                            <label>CO Low Threshold</label>
+                            <input type="number" id="coLowThreshold" class="styled-input" placeholder="Loading..." min="0" max="10000">
+                            <small style="color:var(--text-light);">Batas untuk kategori CO level Rendah</small>
                         </div>
                         <div class="input-wrapper">
                             <label>MQTT Topic</label>
@@ -341,7 +351,17 @@
                         <div class="input-wrapper">
                             <label>CO2 Alert Threshold (PPM)</label>
                             <input type="number" id="co2Threshold" class="styled-input" placeholder="Loading..." min="0" max="10000">
-                            <small style="color:var(--text-light);">Alert ketika CO2 melebihi nilai ini</small>
+                            <small style="color:var(--text-light);">Alert ketika CO2 melebihi nilai ini (Tinggi)</small>
+                        </div>
+                        <div class="input-wrapper">
+                            <label>CO2 Medium Threshold (PPM)</label>
+                            <input type="number" id="co2MediumThreshold" class="styled-input" placeholder="Loading..." min="0" max="10000">
+                            <small style="color:var(--text-light);">Batas untuk kategori CO2 level Sedang</small>
+                        </div>
+                        <div class="input-wrapper">
+                            <label>CO2 Low Threshold (PPM)</label>
+                            <input type="number" id="co2LowThreshold" class="styled-input" placeholder="Loading..." min="0" max="10000">
+                            <small style="color:var(--text-light);">Batas untuk kategori CO2 level Rendah</small>
                         </div>
                         <div class="input-wrapper">
                             <label>Bus Stop Timeout (minutes)</label>
@@ -1703,6 +1723,10 @@
                 document.getElementById('stopTimeout').value = config['BUS_STOP_TIMEOUT_MINUTES'] || 5;
                 document.getElementById('minSpeed').value = config['UDP_MIN_SPEED_THRESHOLD'] || 3.0;
                 document.getElementById('mqttTopic').value = config['MQTT_TOPIC'] || 'bipol/telemetry';
+                document.getElementById('coLowThreshold').value = config['CO_LOW_THRESHOLD'] || 300;
+                document.getElementById('coMediumThreshold').value = config['CO_MEDIUM_THRESHOLD'] || 500;
+                document.getElementById('co2LowThreshold').value = config['CO2_LOW_THRESHOLD'] || 700;
+                document.getElementById('co2MediumThreshold').value = config['CO2_MEDIUM_THRESHOLD'] || 900;
             });
         }
 
@@ -1712,12 +1736,26 @@
             const stopTimeout = document.getElementById('stopTimeout').value;
             const minSpeed = document.getElementById('minSpeed').value;
             const mqttTopic = document.getElementById('mqttTopic').value;
+            const coLowThreshold = document.getElementById('coLowThreshold').value;
+            const coMediumThreshold = document.getElementById('coMediumThreshold').value;
+            const co2LowThreshold = document.getElementById('co2LowThreshold').value;
+            const co2MediumThreshold = document.getElementById('co2MediumThreshold').value;
 
             try {
                 const res = await fetch('/api/admin/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ gasThreshold, co2Threshold, stopTimeout, minSpeed, mqttTopic })
+                    body: JSON.stringify({ 
+                        gasThreshold, 
+                        co2Threshold, 
+                        stopTimeout, 
+                        minSpeed, 
+                        mqttTopic,
+                        coLowThreshold,
+                        coMediumThreshold,
+                        co2LowThreshold,
+                        co2MediumThreshold
+                    })
                 });
 
                 if (res.ok) {

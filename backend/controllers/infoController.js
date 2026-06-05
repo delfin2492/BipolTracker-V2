@@ -28,7 +28,11 @@ exports.getConfig = async (req, res) => {
     res.json({
         gasAlertThreshold: parseInt(await getSetting('GAS_ALERT_THRESHOLD')),
         co2AlertThreshold: parseInt(await getSetting('CO2_ALERT_THRESHOLD')),
-        busStopTimeoutMinutes: parseInt(await getSetting('BUS_STOP_TIMEOUT_MINUTES'))
+        busStopTimeoutMinutes: parseInt(await getSetting('BUS_STOP_TIMEOUT_MINUTES')),
+        coLowThreshold: parseInt(await getSetting('CO_LOW_THRESHOLD')),
+        coMediumThreshold: parseInt(await getSetting('CO_MEDIUM_THRESHOLD')),
+        co2LowThreshold: parseInt(await getSetting('CO2_LOW_THRESHOLD')),
+        co2MediumThreshold: parseInt(await getSetting('CO2_MEDIUM_THRESHOLD'))
     });
 };
 

@@ -219,7 +219,7 @@ exports.getSettings = async (req, res) => {
 
 exports.updateSettings = async (req, res) => {
     try {
-        const { gasThreshold, co2Threshold, stopTimeout, minSpeed, mqttTopic } = req.body;
+        const { gasThreshold, co2Threshold, stopTimeout, minSpeed, mqttTopic, coLowThreshold, coMediumThreshold, co2LowThreshold, co2MediumThreshold } = req.body;
         const updates = {};
 
         if (gasThreshold !== undefined) updates['GAS_ALERT_THRESHOLD'] = gasThreshold;
@@ -227,6 +227,10 @@ exports.updateSettings = async (req, res) => {
         if (stopTimeout !== undefined) updates['BUS_STOP_TIMEOUT_MINUTES'] = stopTimeout;
         if (minSpeed !== undefined) updates['UDP_MIN_SPEED_THRESHOLD'] = minSpeed;
         if (mqttTopic !== undefined) updates['MQTT_TOPIC'] = mqttTopic;
+        if (coLowThreshold !== undefined) updates['CO_LOW_THRESHOLD'] = coLowThreshold;
+        if (coMediumThreshold !== undefined) updates['CO_MEDIUM_THRESHOLD'] = coMediumThreshold;
+        if (co2LowThreshold !== undefined) updates['CO2_LOW_THRESHOLD'] = co2LowThreshold;
+        if (co2MediumThreshold !== undefined) updates['CO2_MEDIUM_THRESHOLD'] = co2MediumThreshold;
 
         await updateSettings(updates);
         res.json({ success: true });

@@ -10,7 +10,11 @@ const DEFAULTS = {
     CO2_ALERT_THRESHOLD: '1000',
     BUS_STOP_TIMEOUT_MINUTES: '5',
     UDP_MIN_SPEED_THRESHOLD: '3.0',
-    MQTT_TOPIC: 'bipol/telemetry'
+    MQTT_TOPIC: 'bipol/telemetry',
+    CO_LOW_THRESHOLD: '300',
+    CO_MEDIUM_THRESHOLD: '500',
+    CO2_LOW_THRESHOLD: '700',
+    CO2_MEDIUM_THRESHOLD: '900'
 };
 
 const listeners = [];

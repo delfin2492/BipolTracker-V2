@@ -1,6 +1,6 @@
 import { stops, rutePagi, ruteSore, bounds } from './data.js';
 import { calculateDistance, estimateArrival, formatTime } from './utils.js';
-import { getBusStatus, GAS_ALERT_THRESHOLD, CO2_ALERT_THRESHOLD } from './status.js';
+import { getBusStatus, GAS_ALERT_THRESHOLD, CO2_ALERT_THRESHOLD, getCOCategory, getCO2Category } from './status.js';
 
 let map;
 let busMarkers = {};
@@ -436,11 +436,11 @@ export function updateMarker(bus) {
                 </div>
                 <div class="popup-stat ${gasClass}">
                     <i class="fa-solid fa-fire"></i>
-                    <span>${bus.gas_level}</span>
+                    <span>${bus.gas_level} PPM (${getCOCategory(bus.gas_level)})</span>
                 </div>
                 <div class="popup-stat ${co2Class}">
                     <i class="fa-solid fa-cloud"></i>
-                    <span>${bus.co2 !== undefined ? bus.co2 : 0} PPM</span>
+                    <span>${bus.co2 !== undefined ? bus.co2 : 0} PPM (${getCO2Category(bus.co2)})</span>
                 </div>
                 <div class="popup-stat">
                     <i class="fa-solid fa-wifi"></i>
