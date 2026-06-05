@@ -95,7 +95,7 @@ function renderChart() {
             bgColor = 'rgba(16, 185, 129, 0.2)';
         } else if (currentTab === 'gas') {
             dataPoints = rawLogData.map(log => log.gas_level || 0);
-            label = 'Gas Level';
+            label = 'CO Level';
             color = '#f59e0b';
             bgColor = 'rgba(245, 158, 11, 0.2)';
         } else if (currentTab === 'speed') {

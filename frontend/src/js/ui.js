@@ -167,7 +167,7 @@ export function checkAlerts(bus) {
         Swal.fire({
             html: `
                 <div class="gas-warning-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                <div class="gas-alert-title">GAS TINGGI DETEKSI</div>
+                <div class="gas-alert-title">CO TINGGI DETEKSI</div>
                 <div class="gas-value-display">${bus.gas_level}</div>
                 <div class="gas-alert-text">Segera periksa kondisi armada ${bus.bus_id}</div>
             `,

@@ -873,7 +873,7 @@ tr:hover {
     }
 
     #logs-section td:nth-child(4)::before {
-        content: "Gas";
+        content: "CO";
     }
 
     #logs-section td:nth-child(5)::before {

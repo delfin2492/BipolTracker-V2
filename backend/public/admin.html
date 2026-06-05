@@ -12,7 +12,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="/socket.io/socket.io.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/admin-DsdXvxzl.css">
+  <link rel="stylesheet" crossorigin href="/assets/admin-C4A7KTP7.css">
 </head>
 
 <body style="visibility: hidden;">
@@ -156,7 +156,7 @@
                 <div class="analytics-stat-card">
                     <i class="fa-solid fa-fire stat-icon" style="color:#ef4444;"></i>
                     <div class="stat-info">
-                        <div class="stat-label">Max Gas Level</div>
+                        <div class="stat-label">Max CO Level</div>
                         <div class="stat-number" id="maxGas">0</div>
                     </div>
                 </div>
@@ -196,7 +196,7 @@
                     <canvas id="speedChart"></canvas>
                 </div>
                 <div class="chart-card">
-                    <h3><i class="fa-solid fa-chart-bar"></i> Gas Level Distribution</h3>
+                    <h3><i class="fa-solid fa-chart-bar"></i> CO Level Distribution</h3>
                     <canvas id="gasChart"></canvas>
                 </div>
             </div>
@@ -243,8 +243,8 @@
                         <option value="oldest">Oldest First</option>
                         <option value="speed_desc">Speed (High-Low)</option>
                         <option value="speed_asc">Speed (Low-High)</option>
-                        <option value="gas_desc">Gas (High-Low)</option>
-                        <option value="gas_asc">Gas (Low-High)</option>
+                        <option value="gas_desc">CO (High-Low)</option>
+                        <option value="gas_asc">CO (Low-High)</option>
                     </select>
                 </div>
             </div>
@@ -255,7 +255,7 @@
                             <th>Bus ID</th>
                             <th>Coordinates</th>
                             <th>Speed</th>
-                            <th>Gas</th>
+                            <th>CO</th>
                             <th>CO2</th>
                             <th>RSSI</th>
                             <th>Bipoltrack Time</th>
@@ -329,9 +329,9 @@
                     <h2><i class="fa-solid fa-bell"></i> Alert Configuration</h2>
                     <div class="form-grid">
                         <div class="input-wrapper">
-                            <label>Gas Alert Threshold</label>
+                            <label>CO Alert Threshold</label>
                             <input type="number" id="gasThreshold" class="styled-input" placeholder="Loading..." min="0" max="10000">
-                            <small style="color:var(--text-light);">Alert ketika gas level melebihi nilai ini</small>
+                            <small style="color:var(--text-light);">Alert ketika CO level melebihi nilai ini</small>
                         </div>
                         <div class="input-wrapper">
                             <label>MQTT Topic</label>
@@ -1549,7 +1549,7 @@
                 return;
             }
 
-            const headers = ['Bus ID', 'Latitude', 'Longitude', 'Speed (km/h)', 'Gas Level', 'CO2 (PPM)', 'RSSI (dBm)', 'Bipoltrack Time', 'Server Time', 'Latency'];
+            const headers = ['Bus ID', 'Latitude', 'Longitude', 'Speed (km/h)', 'CO Level', 'CO2 (PPM)', 'RSSI (dBm)', 'Bipoltrack Time', 'Server Time', 'Latency'];
             const rows = filtered.map(log => {
                 const mqttTime = log.mqtt_timestamp ? formatTimestamp(log.mqtt_timestamp) : '-';
                 const serverTime = log.created_at ? formatTimestamp(log.created_at) : '-';
@@ -1641,11 +1641,11 @@
             html += '<div class="summary">';
             html += '<div class="summary-item"><strong>Total Entries:</strong> ' + filtered.length + '</div>';
             html += '<div class="summary-item"><strong>Avg Speed:</strong> ' + avgSpeed + ' km/h</div>';
-            html += '<div class="summary-item"><strong>Max Gas:</strong> ' + maxGas + '</div>';
+            html += '<div class="summary-item"><strong>Max CO:</strong> ' + maxGas + '</div>';
             html += '<div class="summary-item"><strong>Avg CO2:</strong> ' + avgCo2 + ' PPM</div>';
             html += '<div class="summary-item"><strong>Avg RSSI:</strong> ' + avgRssi + ' dBm</div>';
             html += '</div>';
-            html += '<table><thead><tr><th>Bus ID</th><th>Coordinates</th><th>Speed</th><th>Gas</th><th>CO2</th><th>RSSI</th><th>Bipoltrack Time</th><th>Server Time</th><th>Latency</th></tr></thead><tbody>';
+            html += '<table><thead><tr><th>Bus ID</th><th>Coordinates</th><th>Speed</th><th>CO</th><th>CO2</th><th>RSSI</th><th>Bipoltrack Time</th><th>Server Time</th><th>Latency</th></tr></thead><tbody>';
 
             filtered.slice(0, 50).forEach(function (log) {
                 var mqttTime = log.mqtt_timestamp ? formatTimestamp(log.mqtt_timestamp) : '-';
