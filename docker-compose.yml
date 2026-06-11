@@ -4,6 +4,21 @@ services:
     container_name: bipol-backend
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
+      - "${UDP_PORT:-3333}:${UDP_PORT:-3333}/udp"
     env_file:
       - .env
+    depends_on:
+      - mosquitto
     restart: unless-stopped
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+    restart: unless-stopped
+
