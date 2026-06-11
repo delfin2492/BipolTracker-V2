@@ -761,8 +761,7 @@ void loop() {
     payload += "\"bus_id\":\"" + String(DEVICE_ID) + "\",";
     payload += "\"latitude\":" + String(latBuffer) + ",";
     payload += "\"longitude\":" + String(lonBuffer) + ",";
-    payload += "\"gas\":" + String(mq2Value) + ",";
-    payload += "\"co2\":0,";
+    payload += "\"co\":" + String(mq2Value) + ",";
     payload += "\"rssi\":" + String(rssi) + ",";
     payload += "\"hdop\":" + String(hdopBuffer) + ",";
     payload += "\"satellite\":" + String(satellite) + ",";
