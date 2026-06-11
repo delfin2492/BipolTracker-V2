@@ -10,8 +10,13 @@ exports.trackBus = async (req, res) => {
         const bus_id = sanitizeInput(req.body.bus_id);
         const latitude = parseFloat(req.body.latitude);
         const longitude = parseFloat(req.body.longitude);
-        const speed = parseFloat(req.body.speed);
-        const gas_level = parseInt(req.body.gas_level);
+        const speed = parseFloat(req.body.speed) || 0;
+        const gas_level = parseInt(req.body.co !== undefined ? req.body.co : (req.body.gas_level !== undefined ? req.body.gas_level : req.body.gas)) || 0;
+        const co2 = req.body.co2 !== undefined ? parseInt(req.body.co2) : 0;
+        const rssi = req.body.rssi !== undefined ? parseInt(req.body.rssi) : 0;
+        const hdop = req.body.hdop !== undefined ? parseFloat(req.body.hdop) : null;
+        const snr = req.body.snr !== undefined ? parseFloat(req.body.snr) : null;
+        const satellite = req.body.satellite !== undefined ? parseInt(req.body.satellite) : null;
 
         if (!bus_id || !validate.coordinate(latitude) || !validate.coordinate(longitude)) {
             return res.status(400).send("Data invalid");
@@ -52,6 +57,11 @@ exports.trackBus = async (req, res) => {
             longitude,
             speed: validate.speed(speed) ? speed : 0,
             gas_level: validate.gasLevel(gas_level) ? gas_level : 0,
+            co2,
+            rssi,
+            hdop,
+            snr,
+            satellite,
             mqtt_timestamp: parsedMqttTimestamp,
             created_at: new Date().toISOString()
         };
