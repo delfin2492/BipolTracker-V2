@@ -54,7 +54,7 @@ function startMqttClient(io) {
         logger.mqtt.raw(topic, rawMessage);
 
         try {
-            let bus_id, latitude, longitude, speed, gas_level, co2, rssi, hdop, snr, satellite, mqtt_timestamp = null;
+            let bus_id, latitude, longitude, speed, gas_level, co2, rssi, hdop, snr, satellite, cn0_avg, cn0_max, mqtt_timestamp = null;
 
             if (rawMessage.startsWith('{')) {
                 const data = JSON.parse(rawMessage);
@@ -62,12 +62,14 @@ function startMqttClient(io) {
                 latitude = parseFloat(data.latitude);
                 longitude = parseFloat(data.longitude);
                 speed = parseFloat(data.speed) || 0;
-                gas_level = parseInt(data.co !== undefined ? data.co : (data.gas !== undefined ? data.gas : data.gas_level)) || 0;
+                gas_level = parseInt(data.gas !== undefined ? data.gas : (data.co !== undefined ? data.co : data.gas_level)) || 0;
                 co2 = parseInt(data.co2) || 0;
                 rssi = parseInt(data.rssi) || 0;
                 hdop = data.hdop !== undefined ? parseFloat(data.hdop) : null;
                 snr = data.snr !== undefined ? parseFloat(data.snr) : null;
                 satellite = data.satellite !== undefined ? parseInt(data.satellite) : null;
+                cn0_avg = data.cn0_avg !== undefined ? parseInt(data.cn0_avg) : null;
+                cn0_max = data.cn0_max !== undefined ? parseInt(data.cn0_max) : null;
                 mqtt_timestamp = data.timestamp || data.mqtt_timestamp || data.gps_time || data.time || null;
             } else {
                 const parts = rawMessage.split(',');
@@ -84,6 +86,8 @@ function startMqttClient(io) {
                 hdop = parts.length > 8 ? parseFloat(parts[8]) : null;
                 snr = parts.length > 9 ? parseFloat(parts[9]) : null;
                 satellite = parts.length > 10 ? parseInt(parts[10]) : null;
+                cn0_avg = parts.length > 11 ? parseInt(parts[11]) : null;
+                cn0_max = parts.length > 12 ? parseInt(parts[12]) : null;
             }
 
             if (!bus_id || !validate.coordinate(latitude) || !validate.coordinate(longitude)) {
@@ -135,6 +139,8 @@ function startMqttClient(io) {
                 hdop: hdop,
                 snr: snr,
                 satellite: satellite,
+                cn0_avg: cn0_avg,
+                cn0_max: cn0_max,
                 mqtt_timestamp: parsedMqttTimestamp,
                 created_at: new Date().toISOString()
             };

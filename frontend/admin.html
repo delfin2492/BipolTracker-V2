@@ -147,10 +147,10 @@
 
             <div class="analytics-stats">
                 <div class="analytics-stat-card">
-                    <i class="fa-solid fa-gauge-high stat-icon"></i>
+                    <i class="fa-solid fa-satellite-dish stat-icon" style="color:#0ea5e9;"></i>
                     <div class="stat-info">
-                        <div class="stat-label">Avg Speed</div>
-                        <div class="stat-number" id="avgSpeed">0 km/h</div>
+                        <div class="stat-label">Avg SNR</div>
+                        <div class="stat-number" id="avgSnr">0 dB</div>
                     </div>
                 </div>
                 <div class="analytics-stat-card">
@@ -192,8 +192,8 @@
 
             <div class="charts-grid">
                 <div class="chart-card">
-                    <h3><i class="fa-solid fa-chart-area"></i> Speed Over Time</h3>
-                    <canvas id="speedChart"></canvas>
+                    <h3><i class="fa-solid fa-tower-broadcast"></i> SNR Over Time</h3>
+                    <canvas id="snrChart"></canvas>
                 </div>
                 <div class="chart-card">
                     <h3><i class="fa-solid fa-chart-bar"></i> CO Level Distribution</h3>
@@ -241,8 +241,8 @@
                     <select id="sortLogs" class="styled-input" onchange="renderLogs()">
                         <option value="newest">Newest First</option>
                         <option value="oldest">Oldest First</option>
-                        <option value="speed_desc">Speed (High-Low)</option>
-                        <option value="speed_asc">Speed (Low-High)</option>
+                        <option value="snr_desc">SNR (High-Low)</option>
+                        <option value="snr_asc">SNR (Low-High)</option>
                         <option value="gas_desc">CO (High-Low)</option>
                         <option value="gas_asc">CO (Low-High)</option>
                     </select>
@@ -254,10 +254,14 @@
                         <tr>
                             <th>Bus ID</th>
                             <th>Coordinates</th>
-                            <th>Speed</th>
                             <th>CO</th>
                             <th>CO2</th>
                             <th>RSSI</th>
+                            <th>SNR</th>
+                            <th>HDOP</th>
+                            <th>CN0 Avg</th>
+                            <th>CN0 Max</th>
+                            <th>Halte</th>
                             <th>Bipoltrack Time</th>
                             <th>Server Time</th>
                             <th>Latency</th>
@@ -491,8 +495,46 @@
             }
         });
 
-        function initDashboard() {
+        let geofenceZones = [];
+
+        async function loadGeofenceZones() {
+            try {
+                const res = await fetch('/api/admin/geofences');
+                geofenceZones = await res.json();
+            } catch (e) {
+                console.error('Failed to load geofences list:', e);
+            }
+        }
+
+        function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371e3; // metres
+            const φ1 = lat1 * Math.PI/180;
+            const φ2 = lat2 * Math.PI/180;
+            const Δφ = (lat2-lat1) * Math.PI/180;
+            const Δλ = (lon2-lon1) * Math.PI/180;
+
+            const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                      Math.cos(φ1) * Math.cos(φ2) *
+                      Math.sin(Δλ/2) * Math.sin(Δλ/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            return R * c;
+        }
+
+        function getHalteKeterangan(lat, lon) {
+            if (!lat || !lon) return '-';
+            for (const zone of geofenceZones) {
+                const dist = getDistanceFromLatLonInMeters(lat, lon, zone.latitude, zone.longitude);
+                if (dist <= (zone.radius_meters || 100)) {
+                    return zone.name;
+                }
+            }
+            return 'Di luar Halte';
+        }
+
+        async function initDashboard() {
             loadInfo();
+            await loadGeofenceZones();
             loadLogs();
             loadGeofenceLogs();
             loadLostItems();
@@ -885,16 +927,16 @@
             filtered.sort((a, b) => {
                 const dateA = new Date(a.created_at || 0);
                 const dateB = new Date(b.created_at || 0);
-                const speedA = parseFloat(a.speed || 0);
-                const speedB = parseFloat(b.speed || 0);
+                const snrA = parseFloat(a.snr || 0);
+                const snrB = parseFloat(b.snr || 0);
                 const gasA = parseFloat(a.gas_level || 0);
                 const gasB = parseFloat(b.gas_level || 0);
 
                 switch (sortMode) {
                     case 'newest': return dateB - dateA;
                     case 'oldest': return dateA - dateB;
-                    case 'speed_desc': return speedB - speedA;
-                    case 'speed_asc': return speedA - speedB;
+                    case 'snr_desc': return snrB - snrA;
+                    case 'snr_asc': return snrA - snrB;
                     case 'gas_desc': return gasB - gasA;
                     case 'gas_asc': return gasA - gasB;
                     default: return dateB - dateA;
@@ -904,7 +946,7 @@
             if (filtered.length === 0) {
                 tbody.innerHTML = `
                     <tr class="empty-row">
-                        <td colspan="9">
+                        <td colspan="13">
                             <div class="empty-state">
                                 <i class="fa-solid fa-database"></i>
                                 <div class="empty-state-text">Belum ada data log</div>
@@ -932,10 +974,14 @@
                 tr.innerHTML = `
                     <td style="font-weight:700;">${log.bus_id || 'Unknown'}</td>
                     <td class="data-highlight" style="font-size:0.85rem">${(log.latitude || 0).toFixed(6)}, ${(log.longitude || 0).toFixed(6)}</td>
-                    <td>${log.speed || 0} km/h</td>
                     <td class="data-highlight">${log.gas_level || 0}</td>
                     <td class="data-highlight">${log.co2 || 0} PPM</td>
                     <td class="data-highlight">${log.rssi || 0} dBm</td>
+                    <td class="data-highlight">${log.snr || 0} dB</td>
+                    <td class="data-highlight">${log.hdop !== null && log.hdop !== undefined ? log.hdop : '-'}</td>
+                    <td class="data-highlight">${log.cn0_avg !== null && log.cn0_avg !== undefined ? log.cn0_avg : '-'}</td>
+                    <td class="data-highlight">${log.cn0_max !== null && log.cn0_max !== undefined ? log.cn0_max : '-'}</td>
+                    <td>${getHalteKeterangan(log.latitude, log.longitude)}</td>
                     <td style="color:var(--text-light); font-size:0.85rem">${mqttTime}</td>
                     <td style="color:var(--text-light); font-size:0.85rem">${serverTime}</td>
                     <td class="data-highlight" style="font-weight:600;">${latencyStr}</td>
@@ -1251,7 +1297,7 @@
             });
         }
 
-        let speedChartInstance = null;
+        let snrChartInstance = null;
         let co2ChartInstance = null;
         let rssiChartInstance = null;
         let gasChartInstance = null;
@@ -1299,7 +1345,7 @@
             }
             
             if (!filtered.length) {
-                document.getElementById('avgSpeed').textContent = '0 km/h';
+                document.getElementById('avgSnr').textContent = '0 dB';
                 document.getElementById('maxGas').textContent = '0';
                 document.getElementById('avgCo2').textContent = '0 PPM';
                 document.getElementById('avgRssi').textContent = '0 dBm';
@@ -1308,13 +1354,13 @@
                 return;
             }
 
-            const avgSpeed = filtered.reduce((sum, log) => sum + (log.speed || 0), 0) / filtered.length;
+            const avgSnr = filtered.reduce((sum, log) => sum + (log.snr || 0), 0) / filtered.length;
             const maxGas = Math.max(...filtered.map(log => log.gas_level || 0));
             const uniqueHours = new Set(filtered.map(log => new Date(log.created_at).getHours())).size;
             const avgCo2 = filtered.reduce((sum, log) => sum + (log.co2 || 0), 0) / filtered.length;
             const avgRssi = filtered.reduce((sum, log) => sum + (log.rssi || 0), 0) / filtered.length;
 
-            document.getElementById('avgSpeed').textContent = avgSpeed.toFixed(1) + ' km/h';
+            document.getElementById('avgSnr').textContent = avgSnr.toFixed(1) + ' dB';
             document.getElementById('maxGas').textContent = maxGas;
             document.getElementById('avgCo2').textContent = avgCo2.toFixed(0) + ' PPM';
             document.getElementById('avgRssi').textContent = avgRssi.toFixed(0) + ' dBm';
@@ -1346,10 +1392,10 @@
             const activeBuses = [...new Set(last20.map(log => log.bus_id).filter(Boolean))];
             const colors = ['#BF1E2E', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
 
-            // Speed Chart
-            const speedDatasets = activeBuses.map((busId, i) => {
+            // SNR Chart
+            const snrDatasets = activeBuses.map((busId, i) => {
                 const color = colors[i % colors.length];
-                const data = last20.map(log => log.bus_id === busId ? (log.speed || 0) : null);
+                const data = last20.map(log => log.bus_id === busId ? (log.snr || 0) : null);
                 return {
                     label: busId,
                     data: data,
@@ -1361,13 +1407,13 @@
                 };
             });
 
-            if (speedChartInstance) speedChartInstance.destroy();
-            const ctx1 = document.getElementById('speedChart').getContext('2d');
-            speedChartInstance = new Chart(ctx1, {
+            if (snrChartInstance) snrChartInstance.destroy();
+            const ctx1 = document.getElementById('snrChart').getContext('2d');
+            snrChartInstance = new Chart(ctx1, {
                 type: 'line',
                 data: {
                     labels: speedLabels,
-                    datasets: speedDatasets
+                    datasets: snrDatasets
                 },
                 options: {
                     responsive: true,
@@ -1569,7 +1615,7 @@
                 return;
             }
 
-            const headers = ['Bus ID', 'Latitude', 'Longitude', 'Speed (km/h)', 'CO Level', 'CO2 (PPM)', 'RSSI (dBm)', 'Bipoltrack Time', 'Server Time', 'Latency'];
+            const headers = ['Bus ID', 'Latitude', 'Longitude', 'CO Level', 'CO2 (PPM)', 'RSSI (dBm)', 'SNR (dB)', 'HDOP', 'CN0 Avg', 'CN0 Max', 'Halte', 'Bipoltrack Time', 'Server Time', 'Latency'];
             const rows = filtered.map(log => {
                 const mqttTime = log.mqtt_timestamp ? formatTimestamp(log.mqtt_timestamp) : '-';
                 const serverTime = log.created_at ? formatTimestamp(log.created_at) : '-';
@@ -1586,10 +1632,14 @@
                     log.bus_id || 'Unknown',
                     log.latitude ? log.latitude.toFixed(6) : 0,
                     log.longitude ? log.longitude.toFixed(6) : 0,
-                    log.speed || 0,
                     log.gas_level || 0,
                     log.co2 || 0,
                     log.rssi || 0,
+                    log.snr || 0,
+                    log.hdop !== null && log.hdop !== undefined ? log.hdop : '-',
+                    log.cn0_avg !== null && log.cn0_avg !== undefined ? log.cn0_avg : '-',
+                    log.cn0_max !== null && log.cn0_max !== undefined ? log.cn0_max : '-',
+                    getHalteKeterangan(log.latitude, log.longitude),
                     mqttTime,
                     serverTime,
                     latencyStr
@@ -1639,7 +1689,7 @@
             }
 
             var printWindow = window.open('', '_blank');
-            var avgSpeed = (filtered.reduce(function (sum, log) { return sum + (log.speed || 0); }, 0) / filtered.length).toFixed(1);
+            var avgSnr = (filtered.reduce(function (sum, log) { return sum + (log.snr || 0); }, 0) / filtered.length).toFixed(1);
             var maxGas = Math.max.apply(null, filtered.map(function (log) { return log.gas_level || 0; }));
 
             var avgCo2 = (filtered.reduce(function (sum, log) { return sum + (log.co2 || 0); }, 0) / filtered.length).toFixed(0);
@@ -1660,12 +1710,12 @@
             html += '<p>Generated: ' + new Date().toLocaleString() + '</p>';
             html += '<div class="summary">';
             html += '<div class="summary-item"><strong>Total Entries:</strong> ' + filtered.length + '</div>';
-            html += '<div class="summary-item"><strong>Avg Speed:</strong> ' + avgSpeed + ' km/h</div>';
+            html += '<div class="summary-item"><strong>Avg SNR:</strong> ' + avgSnr + ' dB</div>';
             html += '<div class="summary-item"><strong>Max CO:</strong> ' + maxGas + '</div>';
             html += '<div class="summary-item"><strong>Avg CO2:</strong> ' + avgCo2 + ' PPM</div>';
             html += '<div class="summary-item"><strong>Avg RSSI:</strong> ' + avgRssi + ' dBm</div>';
             html += '</div>';
-            html += '<table><thead><tr><th>Bus ID</th><th>Coordinates</th><th>Speed</th><th>CO</th><th>CO2</th><th>RSSI</th><th>Bipoltrack Time</th><th>Server Time</th><th>Latency</th></tr></thead><tbody>';
+            html += '<table><thead><tr><th>Bus ID</th><th>Coordinates</th><th>CO</th><th>CO2</th><th>RSSI</th><th>SNR</th><th>HDOP</th><th>CN0 Avg</th><th>CN0 Max</th><th>Halte</th><th>Bipoltrack Time</th><th>Server Time</th><th>Latency</th></tr></thead><tbody>';
 
             filtered.slice(0, 50).forEach(function (log) {
                 var mqttTime = log.mqtt_timestamp ? formatTimestamp(log.mqtt_timestamp) : '-';
@@ -1682,10 +1732,14 @@
                 html += '<tr>';
                 html += '<td>' + (log.bus_id || 'Unknown') + '</td>';
                 html += '<td>' + (log.latitude ? log.latitude.toFixed(6) : 0) + ', ' + (log.longitude ? log.longitude.toFixed(6) : 0) + '</td>';
-                html += '<td>' + (log.speed || 0) + ' km/h</td>';
                 html += '<td>' + (log.gas_level || 0) + '</td>';
                 html += '<td>' + (log.co2 || 0) + '</td>';
                 html += '<td>' + (log.rssi || 0) + '</td>';
+                html += '<td>' + (log.snr || 0) + '</td>';
+                html += '<td>' + (log.hdop !== null && log.hdop !== undefined ? log.hdop : '-') + '</td>';
+                html += '<td>' + (log.cn0_avg !== null && log.cn0_avg !== undefined ? log.cn0_avg : '-') + '</td>';
+                html += '<td>' + (log.cn0_max !== null && log.cn0_max !== undefined ? log.cn0_max : '-') + '</td>';
+                html += '<td>' + getHalteKeterangan(log.latitude, log.longitude) + '</td>';
                 html += '<td>' + mqttTime + '</td>';
                 html += '<td>' + serverTime + '</td>';
                 html += '<td>' + latencyStr + '</td>';

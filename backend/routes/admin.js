@@ -6,6 +6,7 @@ const requireAuth = require('../middleware/auth');
 router.use(requireAuth);
 
 router.get('/logs', adminController.getLogs);
+router.get('/geofences', adminController.getGeofences);
 router.get('/geofence-events', adminController.getGeofenceEvents);
 
 router.get('/drivers', adminController.getDrivers);

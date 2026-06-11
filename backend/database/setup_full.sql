@@ -39,7 +39,10 @@ CREATE TABLE "bipol_tracker" (
     "hdop" DOUBLE PRECISION,
     "snr" DOUBLE PRECISION,
     "satellite" INTEGER,
+    "cn0_avg" INTEGER,
+    "cn0_max" INTEGER,
     "mqtt_timestamp" TIMESTAMPTZ,
+
     "created_at" TIMESTAMPTZ DEFAULT NOW()
 );
 

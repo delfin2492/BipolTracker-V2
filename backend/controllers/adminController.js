@@ -239,3 +239,18 @@ exports.updateSettings = async (req, res) => {
         res.status(500).json({ error: 'Failed to update settings' });
     }
 };
+
+exports.getGeofences = async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('geofences')
+            .select('*')
+            .order('name', { ascending: true });
+
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        logger.error('Get geofences error:', err.message);
+        res.status(500).json({ error: 'Failed to fetch geofences' });
+    }
+};
