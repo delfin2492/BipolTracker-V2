@@ -102,7 +102,6 @@ export function updateSidebar(bus, list, index) {
         <div class="bus-info">
             <h4>${bus.bus_id} <span class="status-dot ${statusDot}"></span> <span class="eta-inline"><i class="fa-solid ${eta.icon}"></i> ${eta.text}</span></h4>
             <p style="margin-bottom: 2px;"><span><i class="fa-solid ${busStatus.icon}"></i> ${busStatus.status}</span> &bull;
-            <span><i class="fa-solid fa-gauge"></i> ${bus.speed} km/h</span> &bull;
             <span class="${gasClass}"><i class="fa-solid fa-fire"></i> ${bus.gas_level} PPM (${getCOCategory(bus.gas_level)})</span></p>
             <p style="opacity: 0.8; font-size: 0.85em; margin-bottom: 2px;">
                 <span class="${co2Class}"><i class="fa-solid fa-cloud"></i> ${bus.co2 !== undefined ? bus.co2 : 0} PPM (${getCO2Category(bus.co2)})</span> &bull;

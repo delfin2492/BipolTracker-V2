@@ -197,12 +197,12 @@
             </div>
 
             <div class="faq-section">
-                <h3><i class="fa-solid fa-gauge"></i> Informasi Sensor</h3>
+                <h3><i class="fa-solid fa-wifi"></i> Informasi Sensor</h3>
                 <div class="faq-item">
-                    <div class="faq-icon status-blue"><i class="fa-solid fa-gauge"></i></div>
+                    <div class="faq-icon status-blue"><i class="fa-solid fa-wifi"></i></div>
                     <div class="faq-text">
-                        <h4>Kecepatan (Speed)</h4>
-                        <p>Kecepatan bus dalam satuan km/jam yang diambil dari GPS tracker.</p>
+                        <h4>Kekuatan Sinyal (RSSI)</h4>
+                        <p>Kekuatan sinyal modem pada GPS tracker dalam satuan dBm. Semakin dekat dengan nilai 0, semakin kuat sinyalnya.</p>
                     </div>
                 </div>
                 <div class="faq-item">
@@ -590,10 +590,10 @@
         </div>
         <div class="detail-stats-grid">
             <div class="detail-stat">
-                <div class="stat-name">Speed</div>
-                <i class="fa-solid fa-gauge" style="color: #0ea5e9;"></i>
-                <div class="stat-value" id="detail-speed">0</div>
-                <div class="stat-label">KM/H</div>
+                <div class="stat-name">RSSI</div>
+                <i class="fa-solid fa-wifi" style="color: #0ea5e9;"></i>
+                <div class="stat-value" id="detail-rssi">0</div>
+                <div class="stat-label">dBm</div>
             </div>
             <div class="detail-stat">
                 <div class="stat-name">CO</div>
@@ -615,7 +615,7 @@
             <div class="chart-tabs">
                 <button class="chart-tab active" onclick="switchChartTab('co2', this)">CO2</button>
                 <button class="chart-tab" onclick="switchChartTab('gas', this)">CO</button>
-                <button class="chart-tab" onclick="switchChartTab('speed', this)">Speed</button>
+                <button class="chart-tab" onclick="switchChartTab('rssi', this)">RSSI</button>
             </div>
             <div class="chart-wrapper">
                 <canvas id="busDetailChart"></canvas>

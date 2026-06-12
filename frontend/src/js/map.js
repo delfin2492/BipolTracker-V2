@@ -430,21 +430,17 @@ export function updateMarker(bus) {
                 </div>
             </div>
             <div class="popup-stats" style="display: grid; grid-template-columns: 1fr 1fr; row-gap: 8px; column-gap: 6px;">
-                <div class="popup-stat">
-                    <i class="fa-solid fa-gauge"></i>
-                    <span>${bus.speed} km/h</span>
-                </div>
                 <div class="popup-stat ${gasClass}">
                     <i class="fa-solid fa-fire"></i>
-                    <span>${bus.gas_level} PPM (${getCOCategory(bus.gas_level)})</span>
+                    <span>CO: ${bus.gas_level} PPM</span>
                 </div>
                 <div class="popup-stat ${co2Class}">
                     <i class="fa-solid fa-cloud"></i>
-                    <span>${bus.co2 !== undefined ? bus.co2 : 0} PPM (${getCO2Category(bus.co2)})</span>
+                    <span>CO2: ${bus.co2 !== undefined ? bus.co2 : 0} PPM</span>
                 </div>
-                <div class="popup-stat">
+                <div class="popup-stat" style="grid-column: span 2; border-top: 1px solid rgba(0,0,0,0.05); padding-top: 4px; margin-top: 4px;">
                     <i class="fa-solid fa-wifi"></i>
-                    <span>${bus.rssi !== undefined ? bus.rssi : 0} dBm</span>
+                    <span>Signal (RSSI): ${bus.rssi !== undefined ? bus.rssi : 0} dBm</span>
                 </div>
             </div>
             ${etaHtml}

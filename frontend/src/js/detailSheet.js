@@ -24,7 +24,7 @@ window.openBusDetailSheet = async function (bus) {
 
     // Update DOM instantly with current data
     document.getElementById('detail-bus-name').innerText = bus.bus_id;
-    document.getElementById('detail-speed').innerText = bus.speed;
+    document.getElementById('detail-rssi').innerText = bus.rssi !== undefined ? bus.rssi : 0;
     document.getElementById('detail-gas').innerText = bus.gas_level;
     document.getElementById('detail-co2').innerText = bus.co2 !== undefined ? bus.co2 : 0;
     
@@ -53,7 +53,7 @@ window.updateBusDetailSheet = function (bus) {
     if (currentBusId !== bus.bus_id) return;
     
     // Update text
-    document.getElementById('detail-speed').innerText = bus.speed;
+    document.getElementById('detail-rssi').innerText = bus.rssi !== undefined ? bus.rssi : 0;
     document.getElementById('detail-gas').innerText = bus.gas_level;
     document.getElementById('detail-co2').innerText = bus.co2 !== undefined ? bus.co2 : 0;
 
@@ -119,9 +119,9 @@ function renderChart() {
             label = 'CO Level';
             color = '#f59e0b';
             bgColor = 'rgba(245, 158, 11, 0.2)';
-        } else if (currentTab === 'speed') {
-            dataPoints = rawLogData.map(log => log.speed || 0);
-            label = 'Speed (km/h)';
+        } else if (currentTab === 'rssi') {
+            dataPoints = rawLogData.map(log => log.rssi !== undefined ? log.rssi : 0);
+            label = 'RSSI (dBm)';
             color = '#0ea5e9';
             bgColor = 'rgba(14, 165, 233, 0.2)';
         }
